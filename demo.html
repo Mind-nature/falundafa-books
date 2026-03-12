@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>法輪大法書籍</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    min-height: 100vh;
+  }
+
+  /* === 頂部導航列 === */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    background: #0a2e4a; color: white;
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .navbar .back-btn {
+    display: none; background: none; border: none; color: white;
+    font-size: 22px; cursor: pointer; padding: 4px;
+  }
+  .navbar .back-btn.show { display: block; }
+  .navbar .title { font-size: 18px; font-weight: 600; flex: 1; }
+  .navbar .font-controls {
+    display: flex; gap: 6px;
+  }
+  .navbar .font-controls button {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-size: 14px; font-weight: bold; cursor: pointer;
+  }
+  .navbar .font-controls button:active { background: rgba(255,255,255,0.4); }
+  .navbar .theme-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-size: 16px; cursor: pointer;
+  }
+
+  /* === 第一層：書籍列表 === */
+  .book-list { padding: 8px; }
+  .book-item {
+    background: white; border-radius: 10px;
+    margin-bottom: 6px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .book-item:active { background: #e8f0fe; }
+  .book-item .book-num {
+    color: #888; font-size: 13px; min-width: 28px;
+  }
+  .book-item .book-name {
+    flex: 1; font-size: 16px; padding: 0 8px;
+  }
+  .book-item .arrow { color: #ccc; font-size: 18px; }
+
+  /* === 第二層：章節列表 === */
+  .chapter-list { padding: 8px; }
+  .chapter-item {
+    background: white; border-radius: 10px;
+    margin-bottom: 6px; padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; transition: background 0.15s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .chapter-item:active { background: #e8f0fe; }
+  .chapter-item .ch-name { flex: 1; font-size: 15px; }
+  .chapter-item .arrow { color: #ccc; font-size: 18px; }
+
+  /* === 第三層：閱讀頁面 === */
+  .reader {
+    padding: 16px;
+    line-height: 1.9;
+    font-size: 18px;
+  }
+  .reader h1, .reader h2, .reader h3 {
+    text-align: center; color: #0a2e4a;
+    margin: 20px 0 16px;
+  }
+  .reader p {
+    text-indent: 2em;
+    margin-bottom: 12px;
+  }
+
+  /* === 底部翻頁 === */
+  .page-nav {
+    display: flex; justify-content: space-between;
+    padding: 16px; gap: 12px;
+  }
+  .page-nav button {
+    flex: 1; padding: 12px;
+    border: 1px solid #ddd; border-radius: 8px;
+    background: white; font-size: 15px;
+    cursor: pointer; color: #0a2e4a; font-weight: 500;
+  }
+  .page-nav button:disabled { opacity: 0.3; }
+  .page-nav button:active:not(:disabled) { background: #e8f0fe; }
+
+  /* === 深色模式 === */
+  body.dark {
+    background: #000; color: #fff;
+  }
+  body.dark .navbar { background: #111; }
+  body.dark .book-item,
+  body.dark .chapter-item { background: #111; color: #fff; border: 1px solid #222; }
+  body.dark .book-item:active,
+  body.dark .chapter-item:active { background: #222; }
+  body.dark .book-item .book-num { color: #888; }
+  body.dark .book-item .arrow,
+  body.dark .chapter-item .arrow { color: #555; }
+  body.dark .reader { color: #fff; }
+  body.dark .reader h1, body.dark .reader h2, body.dark .reader h3 { color: #fff; }
+  body.dark .page-nav button { background: #111; color: #fff; border-color: #333; }
+  body.dark .page-nav button:active:not(:disabled) { background: #222; }
+
+  /* 隱藏/顯示頁面 */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* 閱讀進度標記 */
+  .book-item .progress-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #27ae60; margin-right: 8px; display: none;
+  }
+  .book-item .progress-dot.has-progress { display: block; }
+</style>
+</head>
+<body>
+
+<!-- 導航列 -->
+<div class="navbar">
+  <button class="back-btn" id="backBtn" onclick="goBack()">‹</button>
+  <div class="title" id="navTitle">法輪大法書籍</div>
+  <div class="font-controls">
+    <button onclick="changeFontSize(-1)">A-</button>
+    <button onclick="changeFontSize(1)">A+</button>
+  </div>
+  <button class="theme-btn" onclick="toggleDark()">☽</button>
+</div>
+
+<!-- 第一層：書籍列表 -->
+<div class="page active" id="pageBooks">
+  <div class="book-list" id="bookList"></div>
+</div>
+
+<!-- 第二層：章節列表 -->
+<div class="page" id="pageChapters">
+  <div class="chapter-list" id="chapterList"></div>
+</div>
+
+<!-- 第三層：閱讀內容 -->
+<div class="page" id="pageReader">
+  <div class="reader" id="readerContent"></div>
+  <div class="page-nav">
+    <button id="prevBtn" onclick="prevChapter()">◀ 上一章</button>
+    <button id="nextBtn" onclick="nextChapter()">下一章 ▶</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Demo 資料（僅示範 3 本書）
+// ============================================================
+const books = [
+  {
+    id: 1, name: "轉法輪",
+    chapters: [
+      { name: "論語", content: "<h2>論語</h2><p>「真、善、忍」是衡量好壞人的唯一標準，是衡量好壞人的唯一標準。</p><p>這裡是示範內容第二段，實際上會從 HTML 檔案載入完整內容。排版會保持原書的段落格式。</p><p>這裡是第三段示範文字。在真正的版本中，每一章的完整內容都會被載入顯示。</p>" },
+      { name: "第一講", content: "<h2>第一講</h2><p>這是第一講的示範內容。真正的版本會從下載好的 HTML 檔案中提取完整文字。</p><p>第二段示範內容。閱讀時可以調整字體大小，也可以切換深色模式。</p>" },
+      { name: "第二講", content: "<h2>第二講</h2><p>這是第二講的示範內容。</p><p>每一講的內容都會完整呈現，方便在手機上連續閱讀。</p>" },
+      { name: "第三講", content: "<h2>第三講</h2><p>第三講示範。</p>" },
+    ]
+  },
+  {
+    id: 2, name: "法輪功",
+    chapters: [
+      { name: "第一章 概論", content: "<h2>第一章 概論</h2><p>法輪功是示範內容。</p>" },
+      { name: "第二章 法輪功", content: "<h2>第二章 法輪功</h2><p>這是第二章的示範。</p>" },
+    ]
+  },
+  {
+    id: 3, name: "法輪大法義解",
+    chapters: [
+      { name: "在北京法輪大法輔導員會議上的建議", content: "<h2>在北京法輪大法輔導員會議上的建議</h2><p>示範內容。</p>" },
+    ]
+  },
+  { id: 4, name: "轉法輪法解", chapters: [] },
+  { id: 5, name: "轉法輪（卷二）", chapters: [] },
+  { id: 6, name: "悉尼法會講法", chapters: [] },
+  { id: 7, name: "大圓滿法", chapters: [] },
+  { id: 8, name: "美國法會講法", chapters: [] },
+  { id: 9, name: "精進要旨", chapters: [] },
+  { id: 10, name: "北美首屆法會講法", chapters: [] },
+  { id: 11, name: "歐洲法會講法", chapters: [] },
+  { id: 12, name: "長春輔導員法會講法", chapters: [] },
+  { id: 13, name: "新加坡法會講法", chapters: [] },
+  { id: 14, name: "瑞士法會講法", chapters: [] },
+  { id: 15, name: "洪吟", chapters: [] },
+  { id: 16, name: "美國西部法會講法", chapters: [] },
+  { id: 17, name: "美國東部法會講法", chapters: [] },
+  { id: 18, name: "澳大利亞法會講法", chapters: [] },
+  { id: 19, name: "新西蘭法會講法", chapters: [] },
+  { id: 20, name: "加拿大法會講法", chapters: [] },
+  { id: 21, name: "美國中部法會講法", chapters: [] },
+  { id: 22, name: "導航", chapters: [] },
+  { id: 23, name: "精進要旨二", chapters: [] },
+  { id: 24, name: "北美巡迴講法", chapters: [] },
+  { id: 25, name: "二零零三年元宵節講法", chapters: [] },
+  { id: 26, name: "洪吟二", chapters: [] },
+  { id: 27, name: "休斯頓法會講法", chapters: [] },
+  { id: 28, name: "各地講法一", chapters: [] },
+  { id: 29, name: "各地講法二", chapters: [] },
+  { id: 30, name: "各地講法三", chapters: [] },
+  { id: 31, name: "音樂與美術創作會講法", chapters: [] },
+  { id: 32, name: "各地講法四", chapters: [] },
+  { id: 33, name: "各地講法五", chapters: [] },
+  { id: 34, name: "各地講法六", chapters: [] },
+  { id: 35, name: "二零零四年紐約國際法會講法", chapters: [] },
+  { id: 36, name: "各地講法七", chapters: [] },
+  { id: 37, name: "二零零五年舊金山法會講法", chapters: [] },
+  { id: 38, name: "洛杉磯市法會講法", chapters: [] },
+  { id: 39, name: "洪吟三", chapters: [] },
+  { id: 40, name: "精進要旨三", chapters: [] },
+  { id: 41, name: "各地講法八", chapters: [] },
+  { id: 42, name: "各地講法九", chapters: [] },
+  { id: 43, name: "各地講法十", chapters: [] },
+  { id: 44, name: "各地講法十一", chapters: [] },
+  { id: 45, name: "洪吟四", chapters: [] },
+  { id: 46, name: "洪吟五", chapters: [] },
+  { id: 47, name: "各地講法十二", chapters: [] },
+  { id: 48, name: "各地講法十三", chapters: [] },
+  { id: 49, name: "各地講法十四", chapters: [] },
+  { id: 50, name: "各地講法十五", chapters: [] },
+  { id: 51, name: "洪吟六", chapters: [] },
+];
+
+// ============================================================
+// 狀態管理
+// ============================================================
+let currentView = 'books';   // books | chapters | reader
+let currentBookIdx = -1;
+let currentChapterIdx = -1;
+let fontSize = 18;
+
+// ============================================================
+// 渲染書籍列表
+// ============================================================
+function renderBooks() {
+  const el = document.getElementById('bookList');
+  el.innerHTML = books.map((b, i) => {
+    const progress = localStorage.getItem(`book_${b.id}_last`);
+    return `<div class="book-item" onclick="openBook(${i})">
+      <span class="book-num">${b.id}.</span>
+      <div class="progress-dot ${progress ? 'has-progress' : ''}"></div>
+      <span class="book-name">${b.name}</span>
+      <span class="arrow">›</span>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// 打開書籍 → 顯示章節
+// ============================================================
+function openBook(idx) {
+  currentBookIdx = idx;
+  const book = books[idx];
+
+  if (book.chapters.length === 0) {
+    alert('此書尚未載入內容（Demo 僅前 3 本有章節）');
+    return;
+  }
+
+  document.getElementById('navTitle').textContent = book.name;
+  document.getElementById('backBtn').classList.add('show');
+
+  const el = document.getElementById('chapterList');
+  el.innerHTML = book.chapters.map((ch, i) => {
+    return `<div class="chapter-item" onclick="openChapter(${i})">
+      <span class="ch-name">${ch.name}</span>
+      <span class="arrow">›</span>
+    </div>`;
+  }).join('');
+
+  showPage('chapters');
+}
+
+// ============================================================
+// 打開章節 → 顯示內容
+// ============================================================
+function openChapter(idx) {
+  currentChapterIdx = idx;
+  const book = books[currentBookIdx];
+  const chapter = book.chapters[idx];
+
+  document.getElementById('navTitle').textContent = chapter.name;
+  document.getElementById('readerContent').innerHTML = chapter.content;
+  document.getElementById('readerContent').style.fontSize = fontSize + 'px';
+
+  document.getElementById('prevBtn').disabled = (idx === 0);
+  document.getElementById('nextBtn').disabled = (idx === book.chapters.length - 1);
+
+  // 記錄閱讀進度
+  localStorage.setItem(`book_${book.id}_last`, idx);
+
+  showPage('reader');
+  window.scrollTo(0, 0);
+}
+
+function prevChapter() {
+  if (currentChapterIdx > 0) openChapter(currentChapterIdx - 1);
+}
+function nextChapter() {
+  const book = books[currentBookIdx];
+  if (currentChapterIdx < book.chapters.length - 1) openChapter(currentChapterIdx + 1);
+}
+
+// ============================================================
+// 頁面切換
+// ============================================================
+function showPage(view) {
+  currentView = view;
+  document.getElementById('pageBooks').classList.toggle('active', view === 'books');
+  document.getElementById('pageChapters').classList.toggle('active', view === 'chapters');
+  document.getElementById('pageReader').classList.toggle('active', view === 'reader');
+}
+
+function goBack() {
+  if (currentView === 'reader') {
+    const book = books[currentBookIdx];
+    document.getElementById('navTitle').textContent = book.name;
+    showPage('chapters');
+  } else if (currentView === 'chapters') {
+    document.getElementById('navTitle').textContent = '法輪大法書籍';
+    document.getElementById('backBtn').classList.remove('show');
+    showPage('books');
+    renderBooks(); // 更新進度點
+  }
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+// 字體大小
+// ============================================================
+function changeFontSize(delta) {
+  fontSize = Math.max(14, Math.min(28, fontSize + delta * 2));
+  const reader = document.getElementById('readerContent');
+  if (reader) reader.style.fontSize = fontSize + 'px';
+  localStorage.setItem('fontSize', fontSize);
+}
+
+// ============================================================
+// 深色模式
+// ============================================================
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('darkMode', isDark);
+  document.querySelector('.theme-btn').textContent = isDark ? '☀' : '☽';
+}
+
+// ============================================================
+// 初始化
+// ============================================================
+(function init() {
+  // 還原設定
+  const savedSize = localStorage.getItem('fontSize');
+  if (savedSize) fontSize = parseInt(savedSize);
+
+  if (localStorage.getItem('darkMode') === 'true') {
+    document.body.classList.add('dark');
+    document.querySelector('.theme-btn').textContent = '☀';
+  }
+
+  renderBooks();
+})();
+</script>
+</body>
+</html>
