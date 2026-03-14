@@ -640,7 +640,7 @@ function goBack() {
 // 字體大小
 // ============================================================
 function changeFontSize(delta) {
-  fontSize = Math.max(14, Math.min(28, fontSize + delta * 2));
+  fontSize = Math.max(14, Math.min(34, fontSize + delta * 2));
   const reader = document.getElementById('readerContent');
   if (reader) reader.style.fontSize = fontSize + 'px';
   localStorage.setItem('fontSize', fontSize);
