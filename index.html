@@ -23,7 +23,7 @@
   }
   .navbar .back-btn {
     display: none; background: none; border: none; color: white;
-    font-size: 22px; cursor: pointer; padding: 4px;
+    font-size: 22px; cursor: pointer; padding: 10px 20px;
   }
   .navbar .back-btn.show { display: block; }
   .navbar .title { font-size: 18px; font-weight: 600; flex: 1; }
@@ -76,6 +76,7 @@
 
   /* === 第二層：章節列表 === */
   .chapter-list { padding: 8px; }
+  .ch-header { font-size: initial !important; }
   .chapter-item {
     background: white; border-radius: 10px;
     margin-bottom: 6px; padding: 14px 16px;
@@ -290,7 +291,7 @@ function openBook(idx) {
   var specialBooks = [1, 2, 3, 4, 5, 7];
   if (book.type === 'multi' && specialBooks.indexOf(book.id) === -1) {
     var subtitle = book.id === 22 ? '導 航' : book.name;
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">法輪大法</font></b></font></P>' +
       '<P align="center"><b><font color="#0000FF" size="5">' + subtitle + '</font></b></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
@@ -301,7 +302,7 @@ function openBook(idx) {
 
   // 轉法輪法解標題及附言（原封不動保留原始排版）
   if (book.id === 4) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">轉法輪法解</font></b></font></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
       '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
@@ -313,12 +314,12 @@ function openBook(idx) {
       '</blockquote></blockquote>' +
     '</div>' +
     '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
-    '<P align="center"><b>目 錄</b></P>';
+    '<P class="ch-header" align="center"><b>目 錄</b></P>';
   }
 
   // 轉法輪卷二標題及序文（原封不動保留原始排版）
   if (book.id === 5) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">轉 法 輪</font></b></font></P>' +
       '<P align="center"><b><font size="5">（卷二）</font></b></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
@@ -346,13 +347,13 @@ function openBook(idx) {
 
   // 大圓滿法標題及副標題（原封不動保留原始排版）
   if (book.id === 7) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">法輪大法</font></b></font></P>' +
       '<P align="center"><b><font size="5">大圓滿法</font></b></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
       '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
     '</div>' +
-    '<p align="center"><font size="4">動作是修煉圓滿的輔助手段</font></p>' +
+    '<p align="center"><b>動作是修煉圓滿的輔助手段</b></p>' +
     '<div align="right"><table border="0" cellpadding="7" cellspacing="7" width="80%"><tr><td><p align="center">李洪志<br>一九九六年十一月三日</p></td></tr></table></div>' +
     '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
     '<P align="center"><B><FONT color="#0000ff" size="3">目 錄</FONT></B></P>';
@@ -360,7 +361,7 @@ function openBook(idx) {
 
   // 法輪功標題（原封不動保留原始排版）
   if (book.id === 2) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">法 輪 功</font></b></font></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
       '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
@@ -370,7 +371,7 @@ function openBook(idx) {
 
   // 法輪大法義解標題及寫在前面的話（原封不動保留原始排版）
   if (book.id === 3) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<P align="center"><font color="#0000FF"><b><font size="7">法輪大法義解</font></b></font></P>' +
       '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
       '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
@@ -385,12 +386,12 @@ function openBook(idx) {
       '</blockquote>' +
     '</div>' +
     '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
-    '<P align="center"><b>目 錄</b></P>';
+    '<P class="ch-header" align="center"><b>目 錄</b></P>';
   }
 
   // 轉法輪標題（原封不動保留原始排版）
   if (book.id === 1) {
-    html += '<div style="text-align:center;padding:20px 16px 10px;">' +
+    html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
       '<h1><font color="#0000D0">轉　法　輪</font></h1>' +
       '<h3><font color="#0000FF">李洪志</font></h3>' +
       '<hr style="width:50%;margin:0 auto;border:none;border-top:2px solid #ff0000;">' +
@@ -412,13 +413,14 @@ function openBook(idx) {
 
   // 轉法輪附言（原封不動保留原始排版）
   if (book.id === 1) {
-    html += '<div style="padding:20px 16px;line-height:1.8;font-size:15px;">' +
+    html += '<div style="padding:20px 16px;line-height:1.8;">' +
       '<p style="text-indent:2em;margin:0;">　　《轉法輪》在文章的表面上不華麗，甚至不符合現代語法。但是，我如果用現代的語法來整理這本大法的話，就會出現一個嚴重的問題，文章的語言結構規範而漂亮，卻不會有更深更高的內涵。因為用現代的規範詞彙根本就無法表達大法在更高不同層次的指導和法在每一層的表現，以至帶動學員本體與功的演化與提高這種實質的變化。</p>' +
       '<div align="right"><table border="0" cellpadding="20" cellspacing="0" width="50%"><tr><td width="100%"><p align="center">李洪志<br>一九九六年一月五日</p></td></tr></table></div>' +
     '</div>';
   }
 
   el.innerHTML = html;
+  el.style.fontSize = fontSize + 'px';
   showPage('chapters');
 }
 
@@ -643,6 +645,8 @@ function changeFontSize(delta) {
   fontSize = Math.max(14, Math.min(34, fontSize + delta * 2));
   const reader = document.getElementById('readerContent');
   if (reader) reader.style.fontSize = fontSize + 'px';
+  const chapters = document.getElementById('chapterList');
+  if (chapters) chapters.style.fontSize = fontSize + 'px';
   localStorage.setItem('fontSize', fontSize);
 }
 
