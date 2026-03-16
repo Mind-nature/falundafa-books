@@ -538,6 +538,43 @@ function openChapter(idx) {
 
   loadContent(chapter.file);
   showPage('reader');
+
+  // 預載入前後頁的內容和圖片（僅 http 模式）
+  if (!isFileProtocol) {
+    preloadAdjacentChapters(book, idx);
+  }
+}
+
+// ============================================================
+// 預載入相鄰頁面（前後各1頁）
+// ============================================================
+function preloadAdjacentChapters(book, idx) {
+  var offsets = [1, -1];
+  offsets.forEach(function(offset) {
+    var i = idx + offset;
+    if (i < 0 || i >= book.chapters.length) return;
+    var file = book.chapters[i].file;
+    if (contentCache[file]) {
+      // 內容已快取，直接預載入圖片
+      preloadImagesFromHTML(contentCache[file]);
+      return;
+    }
+    fetch(file).then(function(r) { return r.text(); }).then(function(html) {
+      var cleaned = extractContent(html, file);
+      contentCache[file] = cleaned;
+      preloadImagesFromHTML(cleaned);
+    }).catch(function() {});
+  });
+}
+
+function preloadImagesFromHTML(htmlStr) {
+  var matches = htmlStr.match(/src\s*=\s*"([^"]+\.(?:webp|png|jpg|jpeg|gif))"/gi);
+  if (!matches) return;
+  matches.forEach(function(m) {
+    var url = m.replace(/^src\s*=\s*"/i, '').replace(/"$/, '');
+    var img = new Image();
+    img.src = url;
+  });
 }
 
 // ============================================================
@@ -584,6 +621,7 @@ function loadContent(filePath) {
       contentCache[filePath] = cleaned;
       reader.innerHTML = cleaned;
       restoreReaderScroll();
+      preloadImagesFromHTML(cleaned);
     })
     .catch(function() {
       reader.innerHTML = '<div class="loading">載入失敗: ' + filePath + '</div>';
