@@ -549,7 +549,7 @@ function openChapter(idx) {
 // 預載入相鄰頁面（前後各1頁）
 // ============================================================
 function preloadAdjacentChapters(book, idx) {
-  var offsets = [1, -1];
+  var offsets = [1, 2, 3, -1];
   offsets.forEach(function(offset) {
     var i = idx + offset;
     if (i < 0 || i >= book.chapters.length) return;
