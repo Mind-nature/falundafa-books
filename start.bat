@@ -1,5 +1,6 @@
 @echo off
 chcp 65001 >nul
+cd /d "%~dp0"
 
 :: Try to find Python
 where python >nul 2>&1
@@ -18,5 +19,5 @@ pause
 exit /b 1
 
 :found
-start "" "http://localhost:8080"
-"%PYTHON%" -m http.server 8080 --directory "%~dp0"
+start "" "http://localhost:8000"
+"%PYTHON%" -m http.server 8000
