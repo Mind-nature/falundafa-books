@@ -85,6 +85,48 @@
   #pageInput::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   #pageInput::placeholder { color: rgba(255,255,255,0.5); }
 
+  /* === 搜尋框 === */
+  .search-box {
+    padding: 8px 8px 0;
+  }
+  .search-box input {
+    width: 100%; padding: 10px 36px 10px 14px;
+    border: 1px solid #ddd; border-radius: 10px;
+    font-size: 15px; outline: none; background: white;
+  }
+  .search-box input:focus { border-color: #0a2e4a; }
+  .search-box .search-clear {
+    position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; font-size: 18px; color: #999; cursor: pointer;
+    display: none;
+  }
+  .search-box .search-wrapper { position: relative; }
+  .search-result {
+    background: white; border-radius: 10px;
+    margin-bottom: 6px; padding: 12px 16px;
+    cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .search-result:active { background: #e8f0fe; }
+  .search-result .sr-book { font-size: 12px; color: #0a2e4a; font-weight: 600; }
+  .search-result .sr-chapter { font-size: 12px; color: #888; margin-left: 8px; }
+  .search-result .sr-snippet { font-size: 14px; color: #333; margin-top: 4px; line-height: 1.6; }
+  .search-result .sr-snippet mark { background: #fff3cd; color: #333; padding: 0 1px; border-radius: 2px; }
+  .search-status { text-align: center; padding: 20px; color: #888; font-size: 14px; }
+  body.dark .search-box input { background: #111; color: #fff; border-color: #333; }
+  body.dark .search-result { background: #111; color: #fff; border: 1px solid #222; }
+  body.dark .search-result:active { background: #222; }
+  body.dark .search-result .sr-snippet { color: #ddd; }
+  body.dark .search-result .sr-snippet mark { background: #554400; color: #fff; }
+
+  /* === 排序按鈕 === */
+  .sort-btn {
+    display: inline-block; margin: 0 8px 8px; padding: 6px 14px;
+    border: 1px solid #ddd; border-radius: 6px; background: white;
+    font-size: 13px; cursor: pointer; color: #0a2e4a;
+  }
+  .sort-btn:active { background: #e8f0fe; }
+  body.dark .sort-btn { background: #111; color: #fff; border-color: #333; }
+
   /* === 第一層：書籍列表 === */
   .book-list { padding: 8px; }
   .book-item {
@@ -245,6 +287,13 @@
 
 <!-- 第一層：書籍列表 -->
 <div class="page active" id="pageBooks">
+  <div class="search-box">
+    <div class="search-wrapper">
+      <input type="text" id="searchInput" placeholder="經文檢索（至少輸入2個字）" oninput="onSearchInput()">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+  </div>
+  <div id="searchResults" style="padding:0 8px;display:none;"></div>
   <div class="book-list" id="bookList"></div>
   <div style="padding:20px 16px;font-size:16px;color:#666;line-height:2;">
     此網站是由大法弟子在法輪大法官網擷取的，並且優化成手機可觀看的模式，方便同修們觀看。<br>
@@ -305,6 +354,21 @@ var bookDates = {
   49:'2022年03月15日',50:'2022年03月15日',51:'2022年03月18日',52:'2025年10月11日'
 };
 
+var xjwDates = {
+  1:'2012年11月06日',2:'2012年11月18日',3:'2016年07月31日',4:'2016年08月19日',
+  5:'2016年10月13日',6:'2016年11月06日',7:'2016年11月27日',8:'2016年11月29日',
+  9:'2017年08月26日',10:'2017年09月02日',11:'2017年10月01日',12:'2018年04月24日',
+  13:'2018年09月29日',14:'2018年10月14日',15:'2018年11月24日',16:'2018年11月27日',
+  17:'2019年07月21日',18:'2019年08月04日',19:'2019年08月31日',20:'2019年09月15日',
+  21:'2019年10月12日',22:'2019年11月24日',23:'2020年03月19日',24:'2020年07月05日',
+  25:'2020年12月05日',26:'2021年07月18日',27:'2021年08月31日',28:'2021年11月21日',
+  29:'2021年12月18日',30:'2022年03月06日',31:'2022年09月12日',32:'2023年01月20日',
+  33:'2023年04月17日',34:'2023年05月12日',35:'2023年07月23日',36:'2023年08月27日',
+  37:'2023年08月31日',38:'2023年09月01日',39:'2023年09月15日',40:'2023年12月09日',
+  41:'2024年06月05日',42:'2024年06月06日',43:'2024年09月30日',44:'2024年12月01日',
+  45:'2025年02月02日',46:'2025年10月11日'
+};
+
 // ============================================================
 // 渲染書籍列表
 // ============================================================
@@ -359,6 +423,13 @@ function openBook(idx) {
   if (hongYinBooks.indexOf(book.id) !== -1) {
     openChapter(0);
     document.getElementById('navTitle').textContent = book.name;
+    return;
+  }
+
+  // 新經文：使用專用渲染（含排序按鈕）
+  if (book.id === 52) {
+    renderXjwChapters(book);
+    showPage('chapters');
     return;
   }
 
@@ -477,22 +548,6 @@ function openBook(idx) {
       '<p><font color="#0000FF"><b>目 錄</b></font></p>' +
     '</div>';
   }
-
-  // 新經文章節日期
-  var xjwDates = {
-    1:'2012年11月06日',2:'2012年11月18日',3:'2016年07月31日',4:'2016年08月19日',
-    5:'2016年10月13日',6:'2016年11月06日',7:'2016年11月27日',8:'2016年11月29日',
-    9:'2017年08月26日',10:'2017年09月02日',11:'2017年10月01日',12:'2018年04月24日',
-    13:'2018年09月29日',14:'2018年10月14日',15:'2018年11月24日',16:'2018年11月27日',
-    17:'2019年07月21日',18:'2019年08月04日',19:'2019年08月31日',20:'2019年09月15日',
-    21:'2019年10月12日',22:'2019年11月24日',23:'2020年03月19日',24:'2020年07月05日',
-    25:'2020年12月05日',26:'2021年07月18日',27:'2021年08月31日',28:'2021年11月21日',
-    29:'2021年12月18日',30:'2022年03月06日',31:'2022年09月12日',32:'2023年01月20日',
-    33:'2023年04月17日',34:'2023年05月12日',35:'2023年07月23日',36:'2023年08月27日',
-    37:'2023年08月31日',38:'2023年09月01日',39:'2023年09月15日',40:'2023年12月09日',
-    41:'2024年06月05日',42:'2024年06月06日',43:'2024年09月30日',44:'2024年12月01日',
-    45:'2025年02月02日',46:'2025年10月11日'
-  };
 
   // 不需要編號的書：轉法輪(1)、法輪功(2)、大圓滿法(7)
   var noNumberBooks = [1, 2, 7];
@@ -786,6 +841,7 @@ function goBack() {
   } else if (currentView === 'chapters') {
     document.getElementById('navTitle').textContent = '法輪大法書籍';
     document.getElementById('backBtn').classList.remove('show');
+    clearSearch();
     showPage('books');
     renderBooks();
     setTimeout(function() { window.scrollTo(0, savedScrollBooks); }, 0);
@@ -812,6 +868,212 @@ function toggleDark() {
   const isDark = document.body.classList.contains('dark');
   localStorage.setItem('darkMode', isDark);
   document.querySelector('.theme-btn').textContent = isDark ? '☀' : '☽';
+}
+
+// ============================================================
+// 經文檢索
+// ============================================================
+var textCache = {};
+var searchTimer = null;
+var hongYinBooks = [15, 26, 39, 45, 46, 51];
+
+function onSearchInput() {
+  var q = document.getElementById('searchInput').value.trim();
+  document.getElementById('searchClear').style.display = q ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  if (q.length < 2) {
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('bookList').style.display = '';
+    document.querySelector('#pageBooks > div:last-child').style.display = ''; // footer
+    return;
+  }
+  searchTimer = setTimeout(function() { doSearch(q); }, 500);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchClear').style.display = 'none';
+  document.getElementById('searchResults').style.display = 'none';
+  document.getElementById('bookList').style.display = '';
+  document.querySelector('#pageBooks > div:last-child').style.display = '';
+}
+
+async function doSearch(query) {
+  var resultsEl = document.getElementById('searchResults');
+  var bookListEl = document.getElementById('bookList');
+  var footerEl = document.querySelector('#pageBooks > div:last-child');
+  resultsEl.style.display = 'block';
+  bookListEl.style.display = 'none';
+  footerEl.style.display = 'none';
+  resultsEl.innerHTML = '<div class="search-status">搜尋中...</div>';
+
+  var results = [];
+  var totalFiles = 0;
+  var processed = 0;
+
+  // Count total searchable files
+  for (var bi = 0; bi < books.length; bi++) {
+    var bk = books[bi];
+    if (hongYinBooks.indexOf(bk.id) !== -1) continue;
+    if (bk.type === 'single') { totalFiles++; }
+    else if (bk.chapters) { totalFiles += bk.chapters.length; }
+  }
+
+  for (var bi = 0; bi < books.length; bi++) {
+    var bk = books[bi];
+    if (hongYinBooks.indexOf(bk.id) !== -1) continue;
+
+    var files = [];
+    if (bk.type === 'single') {
+      files = [{ name: bk.name, file: bk.file, chIdx: 0 }];
+    } else if (bk.chapters) {
+      files = bk.chapters.map(function(ch, ci) { return { name: ch.name, file: ch.file, chIdx: ci }; });
+    }
+
+    for (var fi = 0; fi < files.length; fi++) {
+      var f = files[fi];
+      processed++;
+
+      // Check if current query still matches (user may have changed input)
+      if (document.getElementById('searchInput').value.trim() !== query) return;
+
+      try {
+        var text = await getTextContent(f.file);
+        var idx = text.indexOf(query);
+        if (idx !== -1) {
+          var start = Math.max(0, idx - 30);
+          var end = Math.min(text.length, idx + query.length + 30);
+          var snippet = (start > 0 ? '...' : '') +
+            text.substring(start, idx) +
+            '<mark>' + text.substring(idx, idx + query.length) + '</mark>' +
+            text.substring(idx + query.length, end) +
+            (end < text.length ? '...' : '');
+          results.push({ bookIdx: bi, bookName: bk.name, chName: f.name, chIdx: f.chIdx, snippet: snippet });
+        }
+      } catch(e) {}
+
+      if (processed % 20 === 0) {
+        resultsEl.innerHTML = '<div class="search-status">搜尋中... (' + processed + '/' + totalFiles + ')</div>' +
+          renderSearchResults(results);
+      }
+    }
+  }
+
+  if (results.length === 0) {
+    resultsEl.innerHTML = '<div class="search-status">找不到「' + query + '」的結果</div>';
+  } else {
+    resultsEl.innerHTML = '<div class="search-status">共找到 ' + results.length + ' 個結果</div>' +
+      renderSearchResults(results);
+  }
+}
+
+function renderSearchResults(results) {
+  return results.map(function(r) {
+    return '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ')">' +
+      '<span class="sr-book">' + r.bookName + '</span>' +
+      '<span class="sr-chapter">' + r.chName + '</span>' +
+      '<div class="sr-snippet">' + r.snippet + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openSearchResult(bookIdx, chIdx) {
+  currentBookIdx = bookIdx;
+  var book = books[bookIdx];
+  document.getElementById('navTitle').textContent = book.name;
+  document.getElementById('backBtn').classList.add('show');
+  if (book.type === 'single') {
+    currentChapterIdx = 0;
+    loadContent(book.file);
+    document.getElementById('prevBtn').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('prevBtnTop').style.display = 'none';
+    document.getElementById('nextBtnTop').style.display = 'none';
+    showPage('reader');
+  } else {
+    openChapter(chIdx);
+  }
+}
+
+async function getTextContent(filePath) {
+  if (textCache[filePath]) return textCache[filePath];
+
+  if (contentCache[filePath]) {
+    var text = htmlToText(contentCache[filePath]);
+    textCache[filePath] = text;
+    return text;
+  }
+
+  try {
+    var resp = await fetch(filePath);
+    var html = await resp.text();
+    var cleaned = extractContent(html, filePath);
+    contentCache[filePath] = cleaned;
+    var text = htmlToText(cleaned);
+    textCache[filePath] = text;
+    return text;
+  } catch(e) {
+    return '';
+  }
+}
+
+function htmlToText(html) {
+  var div = document.createElement('div');
+  div.innerHTML = html;
+  return (div.textContent || div.innerText || '').replace(/\s+/g, '');
+}
+
+// ============================================================
+// 新經文排序
+// ============================================================
+var xjwSortAsc = true; // true=舊到新(原始), false=新到舊
+
+function toggleXjwSort() {
+  xjwSortAsc = !xjwSortAsc;
+  var book = books[currentBookIdx];
+  if (book && book.id === 52) {
+    renderXjwChapters(book);
+  }
+}
+
+function renderXjwChapters(book) {
+  var el = document.getElementById('chapterList');
+  var html = '';
+
+  // 標題
+  html += '<div class="ch-header" style="text-align:center;padding:20px 16px 10px;">' +
+    '<P align="center"><font color="#0000FF"><b><font size="7">法輪大法</font></b></font></P>' +
+    '<P align="center"><b><font color="#0000FF" size="5">' + book.name + '</font></b></P>' +
+    '<P align="center"><b><FONT color="#0000FF" size="5">李洪志</FONT></b></P>' +
+    '<hr style="width:100%;margin:0 auto;border:none;border-top:1px solid #000;">' +
+    '<P align="center"><b>目 錄</b></P>' +
+  '</div>';
+
+  // 排序按鈕
+  html += '<div style="text-align:right;padding:0 8px;">' +
+    '<button class="sort-btn" onclick="toggleXjwSort()">' +
+    (xjwSortAsc ? '由舊到新 ↑' : '由新到舊 ↓') +
+    '</button></div>';
+
+  // 建立索引陣列
+  var indices = [];
+  for (var i = 0; i < book.chapters.length; i++) indices.push(i);
+  if (!xjwSortAsc) indices.reverse();
+
+  html += indices.map(function(origIdx) {
+    var ch = book.chapters[origIdx];
+    var dateHtml = '';
+    if (xjwDates[origIdx + 1]) {
+      dateHtml = '<div class="book-date">發表: ' + xjwDates[origIdx + 1] + '</div>';
+    }
+    return '<div class="chapter-item" onclick="openChapter(' + origIdx + ')">' +
+      '<span class="ch-name"><span class="ch-num">' + (origIdx + 1) + '.</span> <div class="ch-name-inner">' + ch.name + dateHtml + '</div></span>' +
+      '<span class="arrow">›</span>' +
+    '</div>';
+  }).join('');
+
+  el.innerHTML = html;
+  el.style.fontSize = fontSize + 'px';
 }
 
 // ============================================================
