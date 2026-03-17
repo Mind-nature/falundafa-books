@@ -193,6 +193,21 @@
     line-height: 1.9;
     font-size: 18px;
   }
+  .reader img {
+    max-width: 100%;
+    height: auto;
+  }
+  .reader table {
+    max-width: 100%;
+  }
+  .reader td img {
+    max-width: 100%;
+    height: auto;
+  }
+  .reader td {
+    word-wrap: break-word;
+    text-align: center;
+  }
   .reader h1, .reader h2, .reader h3 {
     text-align: center; color: #0a2e4a;
     margin: 20px 0 16px;
@@ -761,6 +776,7 @@ function loadContent(filePath) {
 
   if (contentCache[filePath]) {
     reader.innerHTML = contentCache[filePath];
+    equalizeTableImageHeights();
     restoreReaderScroll();
     return;
   }
@@ -773,6 +789,7 @@ function loadContent(filePath) {
       var cleaned = extractContent(html, filePath);
       contentCache[filePath] = cleaned;
       reader.innerHTML = cleaned;
+      equalizeTableImageHeights();
       restoreReaderScroll();
       preloadImagesFromHTML(cleaned);
     })
@@ -780,6 +797,64 @@ function loadContent(filePath) {
       reader.innerHTML = '<div class="loading">載入失敗: ' + filePath + '</div>';
       window.scrollTo(0, 0);
     });
+}
+
+// ============================================================
+// 等化表格中同列圖片的高度
+// ============================================================
+function equalizeTableImageHeights() {
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+  var tables = reader.querySelectorAll('table');
+  tables.forEach(function(table) {
+    var rows = table.querySelectorAll('tr');
+    rows.forEach(function(row) {
+      var imgs = row.querySelectorAll('td img');
+      if (imgs.length < 2) return;
+      // 等所有圖片載入後再等化
+      var loaded = 0;
+      var total = imgs.length;
+      var doEqualize = function() {
+        var table = row.closest('table');
+        var readerW = (document.querySelector('.reader') || document.body).offsetWidth - 32;
+        // 計算所有圖片自然寬度總和
+        var totalNatW = 0;
+        var allValid = true;
+        imgs.forEach(function(img) {
+          if (img.naturalWidth > 0) totalNatW += img.naturalWidth;
+          else allValid = false;
+        });
+        if (!allValid || totalNatW === 0) return;
+        // 表格寬度 = 圖片總寬度，但不超過容器寬度
+        var tableW = Math.min(totalNatW, readerW);
+        table.style.width = tableW + 'px';
+        table.style.tableLayout = 'auto';
+        table.style.margin = '0 auto';
+        // 按比例分配 td 寬度
+        var allRows = table.querySelectorAll('tr');
+        imgs.forEach(function(img, i) {
+          var pct = Math.round(img.naturalWidth / totalNatW * 100) + '%';
+          allRows.forEach(function(r) {
+            var tds = r.querySelectorAll('td');
+            if (tds[i]) tds[i].style.width = pct;
+          });
+          img.style.maxWidth = '100%';
+          img.style.height = 'auto';
+        });
+      };
+      imgs.forEach(function(img) {
+        if (img.complete) {
+          loaded++;
+          if (loaded === total) doEqualize();
+        } else {
+          img.addEventListener('load', function() {
+            loaded++;
+            if (loaded === total) doEqualize();
+          });
+        }
+      });
+    });
+  });
 }
 
 // ============================================================
