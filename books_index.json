@@ -53,23 +53,67 @@
     "chapters": [
       {
         "name": "第一章　概論",
-        "file": "02_法輪功/flg_1.htm"
+        "file": "02_法輪功/flg_1.htm",
+        "sections": [
+          { "name": "一、氣功的淵源", "anchor": "1" },
+          { "name": "二、氣與功", "anchor": "2" },
+          { "name": "三、功力與功能", "anchor": "3" },
+          { "name": "四、天目", "anchor": "4" },
+          { "name": "五、氣功治病與醫院治病", "anchor": "5" },
+          { "name": "六、佛家氣功與佛教", "anchor": "6" },
+          { "name": "七、正法與邪法", "anchor": "7" }
+        ]
       },
       {
         "name": "第二章　法輪功",
-        "file": "02_法輪功/flg_2.htm"
+        "file": "02_法輪功/flg_2.htm",
+        "sections": [
+          { "name": "一、法輪的作用", "anchor": "1" },
+          { "name": "二、法輪的形態構成", "anchor": "2" },
+          { "name": "三、法輪功的修煉特點", "anchor": "3" },
+          { "name": "四、性命雙修", "anchor": "4" },
+          { "name": "五、意念", "anchor": "5" },
+          { "name": "六、法輪功的修煉層次", "anchor": "6" }
+        ]
       },
       {
         "name": "第三章　修煉心性",
-        "file": "02_法輪功/flg_3.htm"
+        "file": "02_法輪功/flg_3.htm",
+        "sections": [
+          { "name": "一、心性的內涵", "anchor": "1" },
+          { "name": "二、失與得", "anchor": "2" },
+          { "name": "三、「真、善、忍」同修", "anchor": "3" },
+          { "name": "四、去掉嫉妒心", "anchor": "4" },
+          { "name": "五、去掉執著心", "anchor": "5" },
+          { "name": "六、業力", "anchor": "6" },
+          { "name": "七、招魔", "anchor": "7" },
+          { "name": "八、根基與悟性", "anchor": "8" },
+          { "name": "九、清靜心", "anchor": "9" }
+        ]
       },
       {
         "name": "第四章　法輪功功法",
-        "file": "02_法輪功/flg_4.htm"
+        "file": "02_法輪功/flg_4.htm",
+        "sections": [
+          { "name": "一、佛展千手法", "anchor": "1" },
+          { "name": "二、法輪樁法", "anchor": "2" },
+          { "name": "三、貫通兩極法", "anchor": "3" },
+          { "name": "四、法輪周天法", "anchor": "4" },
+          { "name": "五、神通加持法", "anchor": "5" },
+          { "name": "修煉法輪功的一些基本要求和注意事項", "anchor": "6" }
+        ]
       },
       {
         "name": "第五章　答疑",
-        "file": "02_法輪功/flg_5.htm"
+        "file": "02_法輪功/flg_5.htm",
+        "sections": [
+          { "name": "一、法輪和法輪功", "anchor": "1" },
+          { "name": "二、功理與功法", "anchor": "2" },
+          { "name": "三、修煉心性", "anchor": "3" },
+          { "name": "四、天目", "anchor": "4" },
+          { "name": "五、魔難", "anchor": "5" },
+          { "name": "六、空間與人類", "anchor": "6" }
+        ]
       }
     ]
   },
