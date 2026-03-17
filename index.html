@@ -170,10 +170,10 @@
   .chapter-item .ch-num { color: #888; min-width: 24px; display: inline-block; }
   .chapter-item .arrow { color: #ccc; font-size: 18px; }
   .chapter-item .expand-arrow {
-    color: #ccc; font-size: 14px; padding: 4px 8px; margin-right: 4px;
-    transition: transform 0.2s;
+    color: #ccc; font-size: 12px; padding: 4px 12px; margin-left: auto;
+    transition: transform 0.2s; cursor: pointer;
   }
-  .chapter-item.expanded .expand-arrow { transform: rotate(90deg); }
+  .chapter-item.expanded .expand-arrow { transform: rotate(180deg); }
   .section-list {
     max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
     margin: 0 0 6px 0; padding: 0 8px;
@@ -589,15 +589,13 @@ function openBook(idx) {
       dateHtml = '<div class="book-date">發表: ' + xjwDates[i + 1] + '</div>';
     }
     var hasSections = ch.sections && ch.sections.length > 0;
-    var expandArrow = hasSections ? '<span class="expand-arrow" onclick="event.stopPropagation();toggleSections(' + i + ')">›</span>' : '';
-    var itemHtml = '<div class="chapter-item" id="ch-item-' + i + '" onclick="' + (hasSections ? 'toggleSections(' + i + ')' : 'openChapter(' + i + ')') + '">' +
-      expandArrow +
+    var expandArrow = hasSections ? '<span class="expand-arrow" onclick="event.stopPropagation();toggleSections(' + i + ')">▼</span>' : '';
+    var itemHtml = '<div class="chapter-item" id="ch-item-' + i + '" onclick="openChapter(' + i + ')">' +
       '<span class="ch-name">' + label + '<div class="ch-name-inner">' + ch.name + dateHtml + '</div></span>' +
-      '<span class="arrow">›</span>' +
+      (hasSections ? expandArrow : '<span class="arrow">›</span>') +
     '</div>';
     if (hasSections) {
       itemHtml += '<div class="section-list" id="sec-list-' + i + '">';
-      itemHtml += '<div class="section-item" onclick="openChapter(' + i + ')" style="font-weight:600;padding-left:16px;">閱讀全文</div>';
       ch.sections.forEach(function(sec) {
         itemHtml += '<div class="section-item" onclick="openChapterSection(' + i + ',\'' + sec.anchor + '\')">' + sec.name + '</div>';
       });
