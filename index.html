@@ -117,6 +117,11 @@
   body.dark .search-result:active { background: #222; }
   body.dark .search-result .sr-snippet { color: #ddd; }
   body.dark .search-result .sr-snippet mark { background: #554400; color: #fff; }
+  .search-pagination { display: flex; justify-content: center; gap: 12px; padding: 16px 8px; }
+  .search-pagination button { padding: 8px 20px; border: 1px solid #ccc; border-radius: 6px; background: #fff; font-size: 14px; cursor: pointer; }
+  .search-pagination button:active { background: #e8f0fe; }
+  body.dark .search-pagination button { background: #111; color: #fff; border-color: #333; }
+  body.dark .search-pagination button:active { background: #222; }
 
   /* === 排序按鈕 === */
   .sort-btn {
@@ -881,6 +886,29 @@ function toggleDark() {
 var textCache = {};
 var searchTimer = null;
 var hongYinBooks = [15, 26, 39, 45, 46, 51];
+var searchIndex = null;       // pre-built index (file -> text)
+var searchIndexLoading = false;
+var searchAllResults = [];    // all results for current search
+var searchCurrentPage = 0;
+var SEARCH_PAGE_SIZE = 20;
+
+// Load pre-built search index
+function loadSearchIndex() {
+  if (searchIndex || searchIndexLoading) return;
+  searchIndexLoading = true;
+  fetch('search-index.json')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      searchIndex = data;
+      // also populate textCache for consistency
+      for (var key in data) { textCache[key] = data[key]; }
+      searchIndexLoading = false;
+    })
+    .catch(function() { searchIndexLoading = false; });
+}
+
+// Start loading index as soon as page loads
+loadSearchIndex();
 
 function onSearchInput() {
   var q = document.getElementById('searchInput').value.trim();
@@ -901,6 +929,8 @@ function clearSearch() {
   document.getElementById('searchResults').style.display = 'none';
   document.getElementById('bookList').style.display = '';
   document.querySelector('#pageBooks > div:last-child').style.display = '';
+  searchAllResults = [];
+  searchCurrentPage = 0;
 }
 
 async function doSearch(query) {
@@ -912,74 +942,134 @@ async function doSearch(query) {
   footerEl.style.display = 'none';
   resultsEl.innerHTML = '<div class="search-status">搜尋中...</div>';
 
-  var results = [];
-  var totalFiles = 0;
-  var processed = 0;
+  searchAllResults = [];
+  searchCurrentPage = 0;
 
-  // Count total searchable files
+  // Build file list
+  var allFiles = [];
   for (var bi = 0; bi < books.length; bi++) {
     var bk = books[bi];
     if (hongYinBooks.indexOf(bk.id) !== -1) continue;
-    if (bk.type === 'single') { totalFiles++; }
-    else if (bk.chapters) { totalFiles += bk.chapters.length; }
-  }
-
-  for (var bi = 0; bi < books.length; bi++) {
-    var bk = books[bi];
-    if (hongYinBooks.indexOf(bk.id) !== -1) continue;
-
-    var files = [];
     if (bk.type === 'single') {
-      files = [{ name: bk.name, file: bk.file, chIdx: 0 }];
+      allFiles.push({ bookIdx: bi, bookName: bk.name, name: bk.name, file: bk.file, chIdx: 0 });
     } else if (bk.chapters) {
-      files = bk.chapters.map(function(ch, ci) { return { name: ch.name, file: ch.file, chIdx: ci }; });
-    }
-
-    for (var fi = 0; fi < files.length; fi++) {
-      var f = files[fi];
-      processed++;
-
-      // Check if current query still matches (user may have changed input)
-      if (document.getElementById('searchInput').value.trim() !== query) return;
-
-      try {
-        var text = await getTextContent(f.file);
-        var idx = text.indexOf(query);
-        if (idx !== -1) {
-          var start = Math.max(0, idx - 30);
-          var end = Math.min(text.length, idx + query.length + 30);
-          var snippet = (start > 0 ? '...' : '') +
-            text.substring(start, idx) +
-            '<mark>' + text.substring(idx, idx + query.length) + '</mark>' +
-            text.substring(idx + query.length, end) +
-            (end < text.length ? '...' : '');
-          results.push({ bookIdx: bi, bookName: bk.name, chName: f.name, chIdx: f.chIdx, snippet: snippet });
-        }
-      } catch(e) {}
-
-      if (processed % 20 === 0) {
-        resultsEl.innerHTML = '<div class="search-status">搜尋中... (' + processed + '/' + totalFiles + ')</div>' +
-          renderSearchResults(results);
+      for (var ci = 0; ci < bk.chapters.length; ci++) {
+        var ch = bk.chapters[ci];
+        allFiles.push({ bookIdx: bi, bookName: bk.name, name: ch.name, file: ch.file, chIdx: ci });
       }
     }
   }
 
-  if (results.length === 0) {
+  var totalFiles = allFiles.length;
+
+  // If index is loaded, search instantly
+  if (searchIndex) {
+    for (var i = 0; i < allFiles.length; i++) {
+      var f = allFiles[i];
+      var text = searchIndex[f.file] || '';
+      findAllMatches(text, query, f, searchAllResults);
+    }
+  } else {
+    // Fallback: parallel fetch in batches of 10
+    var BATCH = 10;
+    var processed = 0;
+    for (var start = 0; start < allFiles.length; start += BATCH) {
+      if (document.getElementById('searchInput').value.trim() !== query) return;
+      var batch = allFiles.slice(start, start + BATCH);
+      var texts = await Promise.all(batch.map(function(f) { return getTextContent(f.file); }));
+      for (var j = 0; j < batch.length; j++) {
+        findAllMatches(texts[j], query, batch[j], searchAllResults);
+      }
+      processed += batch.length;
+      resultsEl.innerHTML = '<div class="search-status">搜尋中... (' + processed + '/' + totalFiles + ')</div>' +
+        renderSearchResultsPage(searchAllResults, 0);
+    }
+  }
+
+  if (searchAllResults.length === 0) {
     resultsEl.innerHTML = '<div class="search-status">找不到「' + query + '」的結果</div>';
   } else {
-    resultsEl.innerHTML = '<div class="search-status">共找到 ' + results.length + ' 個結果</div>' +
-      renderSearchResults(results);
+    searchCurrentPage = 0;
+    showSearchResultsPage();
   }
 }
 
-function renderSearchResults(results) {
-  return results.map(function(r) {
+function findAllMatches(text, query, fileInfo, results) {
+  var startPos = 0;
+  while (true) {
+    var idx = text.indexOf(query, startPos);
+    if (idx === -1) break;
+    var snippetStart = Math.max(0, idx - 30);
+    var snippetEnd = Math.min(text.length, idx + query.length + 30);
+    var snippet = (snippetStart > 0 ? '...' : '') +
+      text.substring(snippetStart, idx) +
+      '<mark>' + text.substring(idx, idx + query.length) + '</mark>' +
+      text.substring(idx + query.length, snippetEnd) +
+      (snippetEnd < text.length ? '...' : '');
+    results.push({
+      bookIdx: fileInfo.bookIdx, bookName: fileInfo.bookName,
+      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: snippet
+    });
+    startPos = idx + query.length;
+  }
+}
+
+function showSearchResultsPage() {
+  var resultsEl = document.getElementById('searchResults');
+  var total = searchAllResults.length;
+  var startIdx = searchCurrentPage * SEARCH_PAGE_SIZE;
+  var endIdx = Math.min(startIdx + SEARCH_PAGE_SIZE, total);
+  var totalPages = Math.ceil(total / SEARCH_PAGE_SIZE);
+
+  var html = '<div class="search-status">共找到 ' + total + ' 個結果';
+  if (totalPages > 1) html += '（第 ' + (searchCurrentPage + 1) + '/' + totalPages + ' 頁）';
+  html += '</div>';
+
+  html += renderSearchResultsPage(searchAllResults, searchCurrentPage);
+
+  // Pagination buttons
+  if (totalPages > 1) {
+    html += '<div class="search-pagination">';
+    if (searchCurrentPage > 0) {
+      html += '<button onclick="searchPrevPage()">◀ 上一頁</button>';
+    }
+    if (searchCurrentPage < totalPages - 1) {
+      html += '<button onclick="searchNextPage()">下一頁 ▶</button>';
+    }
+    html += '</div>';
+  }
+
+  resultsEl.innerHTML = html;
+}
+
+function renderSearchResultsPage(results, page) {
+  var start = page * SEARCH_PAGE_SIZE;
+  var end = Math.min(start + SEARCH_PAGE_SIZE, results.length);
+  var slice = results.slice(start, end);
+  return slice.map(function(r) {
     return '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ')">' +
       '<span class="sr-book">' + r.bookName + '</span>' +
       '<span class="sr-chapter">' + r.chName + '</span>' +
       '<div class="sr-snippet">' + r.snippet + '</div>' +
     '</div>';
   }).join('');
+}
+
+function searchNextPage() {
+  var totalPages = Math.ceil(searchAllResults.length / SEARCH_PAGE_SIZE);
+  if (searchCurrentPage < totalPages - 1) {
+    searchCurrentPage++;
+    showSearchResultsPage();
+    document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function searchPrevPage() {
+  if (searchCurrentPage > 0) {
+    searchCurrentPage--;
+    showSearchResultsPage();
+    document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
+  }
 }
 
 function openSearchResult(bookIdx, chIdx) {
