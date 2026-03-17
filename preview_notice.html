@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>預覽 - 閱讀前注意事項（亮色 vs 暗色）</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Microsoft JhengHei", "PingFang TC", sans-serif;
+    padding: 20px;
+    background: #eee;
+  }
+  h1 { text-align: center; margin-bottom: 24px; font-size: 20px; color: #333; }
+  .preview-row {
+    display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+  }
+  .preview-col {
+    flex: 1; min-width: 320px; max-width: 560px;
+  }
+  .preview-col h2 {
+    text-align: center; margin-bottom: 12px; font-size: 16px;
+  }
+  .preview-frame {
+    border-radius: 12px; padding: 24px; position: relative;
+  }
+  .preview-frame.light {
+    background: rgba(0,0,0,0.5);
+  }
+  .preview-frame.dark {
+    background: rgba(0,0,0,0.85);
+  }
+
+  /* ===== 亮色版注意事項 ===== */
+  .light .notice-box {
+    background: white; border-radius: 12px; padding: 24px;
+    max-width: 540px; width: 100%; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3); line-height: 1.9; font-size: 15px;
+    color: #333;
+  }
+  .light .notice-box h3 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #0a2e4a; }
+  .light .notice-box .notice-item { margin-bottom: 10px; }
+  .light .notice-box .notice-item b { color: #0a2e4a; }
+  .light .notice-box .notice-close {
+    display: block; margin: 20px auto 0; padding: 8px 32px;
+    background: #0a2e4a; color: white; border: none; border-radius: 8px;
+    font-size: 15px; cursor: pointer;
+  }
+
+  /* ===== 暗色版注意事項 ===== */
+  .dark .notice-box {
+    background: #1a1a1a; border-radius: 12px; padding: 24px;
+    max-width: 540px; width: 100%; max-height: 80vh; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5); line-height: 1.9; font-size: 15px;
+    color: #ddd;
+  }
+  .dark .notice-box h3 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #fff; }
+  .dark .notice-box .notice-item { margin-bottom: 10px; }
+  .dark .notice-box .notice-item b { color: #7ab3e0; }
+  .dark .notice-box .notice-close {
+    display: block; margin: 20px auto 0; padding: 8px 32px;
+    background: #2a5a8a; color: white; border: none; border-radius: 8px;
+    font-size: 15px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>閱讀前注意事項 — 亮色 vs 關燈版 預覽</h1>
+
+<div class="preview-row">
+
+  <!-- 亮色版 -->
+  <div class="preview-col">
+    <h2>☀ 亮色版（原本）</h2>
+    <div class="preview-frame light">
+      <div class="notice-box">
+        <h3>閱讀前注意事項</h3>
+        <p>閱讀《轉法輪》的核心注意事項是系統通讀、不挑章節、無求之心、專一修煉。建議依照成書順序完整閱讀，切忌只讀局部，並要排除想治病或求神通的執著心，在靜心中領悟法理。書中建議修煉者不可腳踩兩隻船，專心學法能無所求而自得。</p>
+        <p style="margin-top:12px;"><b>以下是《轉法輪》閱讀的具體事項：</b></p>
+        <div class="notice-item"><b>系統通讀：</b>從第一講按順序讀至第九講，不跳章、不挑內容，完整通讀。</div>
+        <div class="notice-item"><b>排除有求之心：</b>學法時不應抱著治病、求功能或其他目的，否則難以領悟高深內涵，做到「無所求而自得」。</div>
+        <div class="notice-item"><b>專一修煉：</b>修煉要專一，不可同時混雜其他法門的書籍，避免「腳踩兩隻船」。</div>
+        <div class="notice-item"><b>學法與修心：</b>重點在於「修心」，以真、善、忍為標準提高心性。</div>
+        <div class="notice-item"><b>正確認識：</b>書中包含了修煉從入門到圓滿的所有法理，反覆閱讀能解決修煉中產生的疑問。</div>
+        <div class="notice-item"><b>不收費：</b>法輪大法的書籍和相關活動均為免費，若遇收費則非正統。</div>
+        <div class="notice-item">初學者建議反覆通讀，體會法理的深度。</div>
+        <button class="notice-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 暗色版 -->
+  <div class="preview-col">
+    <h2>☽ 關燈版（新增）</h2>
+    <div class="preview-frame dark">
+      <div class="notice-box">
+        <h3>閱讀前注意事項</h3>
+        <p>閱讀《轉法輪》的核心注意事項是系統通讀、不挑章節、無求之心、專一修煉。建議依照成書順序完整閱讀，切忌只讀局部，並要排除想治病或求神通的執著心，在靜心中領悟法理。書中建議修煉者不可腳踩兩隻船，專心學法能無所求而自得。</p>
+        <p style="margin-top:12px;"><b>以下是《轉法輪》閱讀的具體事項：</b></p>
+        <div class="notice-item"><b>系統通讀：</b>從第一講按順序讀至第九講，不跳章、不挑內容，完整通讀。</div>
+        <div class="notice-item"><b>排除有求之心：</b>學法時不應抱著治病、求功能或其他目的，否則難以領悟高深內涵，做到「無所求而自得」。</div>
+        <div class="notice-item"><b>專一修煉：</b>修煉要專一，不可同時混雜其他法門的書籍，避免「腳踩兩隻船」。</div>
+        <div class="notice-item"><b>學法與修心：</b>重點在於「修心」，以真、善、忍為標準提高心性。</div>
+        <div class="notice-item"><b>正確認識：</b>書中包含了修煉從入門到圓滿的所有法理，反覆閱讀能解決修煉中產生的疑問。</div>
+        <div class="notice-item"><b>不收費：</b>法輪大法的書籍和相關活動均為免費，若遇收費則非正統。</div>
+        <div class="notice-item">初學者建議反覆通讀，體會法理的深度。</div>
+        <button class="notice-close">關閉</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
