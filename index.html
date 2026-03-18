@@ -101,6 +101,14 @@
     display: none;
   }
   .search-box .search-wrapper { position: relative; }
+  .search-group { margin: 8px; border-radius: 8px; overflow: hidden; }
+  .search-group-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f0f4f8; cursor: pointer; font-size: 14px; font-weight: 600; color: #0a2e4a; border-bottom: 1px solid #e0e0e0; }
+  .search-group-header .sg-count { font-size: 12px; color: #888; font-weight: 400; }
+  .search-group-header .sg-arrow { transition: transform 0.2s; }
+  .search-group.collapsed .sg-arrow { transform: rotate(-90deg); }
+  .search-group.collapsed .search-group-body { display: none; }
+  body.dark .search-group-header { background: #1a1a1a; color: #ddd; border-bottom-color: #333; }
+  body.dark .search-group-header .sg-count { color: #888; }
   .search-result {
     background: white; border-radius: 10px;
     margin-bottom: 6px; padding: 12px 16px;
@@ -122,6 +130,8 @@
   .search-pagination button:active { background: #e8f0fe; }
   body.dark .search-pagination button { background: #111; color: #fff; border-color: #333; }
   body.dark .search-pagination button:active { background: #222; }
+  .search-highlight { background: #fff3cd; padding: 0 2px; border-radius: 2px; }
+  body.dark .search-highlight { background: #554400; color: #fff; }
 
   /* === 排序按鈕 === */
   .sort-btn {
@@ -783,7 +793,7 @@ function loadContent(filePath) {
   if (contentCache[filePath]) {
     reader.innerHTML = contentCache[filePath];
     equalizeTableImageHeights();
-    restoreReaderScroll();
+    if (pendingSearchHighlight) { highlightAndScrollToSearch(); } else { restoreReaderScroll(); }
     return;
   }
 
@@ -796,7 +806,7 @@ function loadContent(filePath) {
       contentCache[filePath] = cleaned;
       reader.innerHTML = cleaned;
       equalizeTableImageHeights();
-      restoreReaderScroll();
+      if (pendingSearchHighlight) { highlightAndScrollToSearch(); } else { restoreReaderScroll(); }
       preloadImagesFromHTML(cleaned);
     })
     .catch(function() {
@@ -973,7 +983,11 @@ function showPage(view) {
 }
 
 window.addEventListener('popstate', function(e) {
-  if (currentView === 'books') return;
+  if (currentView === 'books') {
+    // Already at top level, push state back so future back still works
+    if (!handlingPopstate) history.pushState({ view: 'books' }, '');
+    return;
+  }
   handlingPopstate = true;
   goBack();
   handlingPopstate = false;
@@ -984,6 +998,22 @@ function goBack() {
   if (currentView === 'reader') {
     // 記住閱讀器滾動位置
     savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
+
+    // 從搜尋結果進入的，返回搜尋頁面
+    if (cameFromSearch && searchAllResults.length > 0) {
+      cameFromSearch = false;
+      document.getElementById('navTitle').textContent = '法輪大法書籍';
+      document.getElementById('backBtn').classList.remove('show');
+      showPage('books');
+      // 顯示搜尋結果，隱藏書籍列表
+      document.getElementById('searchResults').style.display = 'block';
+      document.getElementById('bookList').style.display = 'none';
+      document.querySelector('#pageBooks > div:last-child').style.display = 'none';
+      showSearchResultsPage();
+      window.scrollTo(0, 0);
+      return;
+    }
+
     const book = books[currentBookIdx];
     if (book.type === 'single') {
       // 單頁書籍，返回書籍列表
@@ -1176,29 +1206,67 @@ function findAllMatches(text, query, fileInfo, results) {
 function showSearchResultsPage() {
   var resultsEl = document.getElementById('searchResults');
   var total = searchAllResults.length;
-  var startIdx = searchCurrentPage * SEARCH_PAGE_SIZE;
-  var endIdx = Math.min(startIdx + SEARCH_PAGE_SIZE, total);
-  var totalPages = Math.ceil(total / SEARCH_PAGE_SIZE);
 
-  var html = '<div class="search-status">共找到 ' + total + ' 個結果';
-  if (totalPages > 1) html += '（第 ' + (searchCurrentPage + 1) + '/' + totalPages + ' 頁）';
-  html += '</div>';
+  // Group by book
+  var groups = [];
+  var groupMap = {};
+  for (var i = 0; i < total; i++) {
+    var r = searchAllResults[i];
+    if (!(r.bookIdx in groupMap)) {
+      groupMap[r.bookIdx] = groups.length;
+      groups.push({ bookName: r.bookName, bookIdx: r.bookIdx, items: [] });
+    }
+    groups[groupMap[r.bookIdx]].items.push(r);
+  }
 
-  html += renderSearchResultsPage(searchAllResults, searchCurrentPage);
+  // Paginate by books (30 books per page)
+  var BOOKS_PER_PAGE = 30;
+  var totalBookPages = Math.ceil(groups.length / BOOKS_PER_PAGE);
+  var pageStart = searchCurrentPage * BOOKS_PER_PAGE;
+  var pageEnd = Math.min(pageStart + BOOKS_PER_PAGE, groups.length);
+  var pageGroups = groups.slice(pageStart, pageEnd);
 
-  // Pagination buttons
-  if (totalPages > 1) {
+  var html = '<div class="search-status">共找到 ' + total + ' 個結果（' + groups.length + ' 本書）</div>';
+
+  for (var g = 0; g < pageGroups.length; g++) {
+    var grp = pageGroups[g];
+    html += '<div class="search-group" id="sg-' + g + '">';
+    html += '<div class="search-group-header" onclick="toggleSearchGroup(' + g + ')">';
+    html += '<span>▾ ' + grp.bookName + '</span>';
+    html += '<span class="sg-count">' + grp.items.length + ' 個結果</span>';
+    html += '</div>';
+    html += '<div class="search-group-body">';
+    for (var j = 0; j < grp.items.length; j++) {
+      var r = grp.items[j];
+      var snippetText = r.snippet.replace(/<mark>/g, '').replace(/<\/mark>/g, '');
+      var searchQuery = document.getElementById('searchInput').value.trim();
+      html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\')">' +
+        '<span class="sr-chapter">' + r.chName + '</span>' +
+        '<div class="sr-snippet">' + r.snippet + '</div>' +
+      '</div>';
+    }
+    html += '</div></div>';
+  }
+
+  // Pagination controls
+  if (totalBookPages > 1) {
     html += '<div class="search-pagination">';
     if (searchCurrentPage > 0) {
-      html += '<button onclick="searchPrevPage()">◀ 上一頁</button>';
+      html += '<button onclick="searchPrevPage()">上一頁</button>';
     }
-    if (searchCurrentPage < totalPages - 1) {
-      html += '<button onclick="searchNextPage()">下一頁 ▶</button>';
+    html += '<span style="padding:8px;font-size:14px;color:#888;">' + (searchCurrentPage + 1) + ' / ' + totalBookPages + '</span>';
+    if (searchCurrentPage < totalBookPages - 1) {
+      html += '<button onclick="searchNextPage()">下一頁</button>';
     }
     html += '</div>';
   }
 
   resultsEl.innerHTML = html;
+}
+
+function toggleSearchGroup(idx) {
+  var el = document.getElementById('sg-' + idx);
+  if (el) el.classList.toggle('collapsed');
 }
 
 function renderSearchResultsPage(results, page) {
@@ -1215,12 +1283,9 @@ function renderSearchResultsPage(results, page) {
 }
 
 function searchNextPage() {
-  var totalPages = Math.ceil(searchAllResults.length / SEARCH_PAGE_SIZE);
-  if (searchCurrentPage < totalPages - 1) {
-    searchCurrentPage++;
-    showSearchResultsPage();
-    document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
-  }
+  searchCurrentPage++;
+  showSearchResultsPage();
+  document.getElementById('searchResults').scrollIntoView({ behavior: 'smooth' });
 }
 
 function searchPrevPage() {
@@ -1231,7 +1296,13 @@ function searchPrevPage() {
   }
 }
 
-function openSearchResult(bookIdx, chIdx) {
+var pendingSearchHighlight = null;
+var cameFromSearch = false;
+
+function openSearchResult(bookIdx, chIdx, encodedQuery) {
+  var query = encodedQuery ? decodeURIComponent(encodedQuery) : '';
+  pendingSearchHighlight = query || null;
+  cameFromSearch = true;
   currentBookIdx = bookIdx;
   var book = books[bookIdx];
   document.getElementById('navTitle').textContent = book.name;
@@ -1246,6 +1317,44 @@ function openSearchResult(bookIdx, chIdx) {
     showPage('reader');
   } else {
     openChapter(chIdx);
+  }
+}
+
+function highlightAndScrollToSearch() {
+  if (!pendingSearchHighlight) return;
+  var query = pendingSearchHighlight;
+  pendingSearchHighlight = null;
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+
+  // Use TreeWalker to find text nodes containing the query
+  var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
+  var node;
+  while (node = walker.nextNode()) {
+    var idx = node.textContent.indexOf(query);
+    if (idx !== -1) {
+      // Split and wrap the match in a <mark>
+      var before = node.textContent.substring(0, idx);
+      var match = node.textContent.substring(idx, idx + query.length);
+      var after = node.textContent.substring(idx + query.length);
+      var mark = document.createElement('mark');
+      mark.textContent = match;
+      mark.className = 'search-highlight';
+      mark.style.background = '#fff3cd';
+      mark.style.padding = '0 2px';
+      mark.style.borderRadius = '2px';
+      var parent = node.parentNode;
+      var frag = document.createDocumentFragment();
+      if (before) frag.appendChild(document.createTextNode(before));
+      frag.appendChild(mark);
+      if (after) frag.appendChild(document.createTextNode(after));
+      parent.replaceChild(frag, node);
+      // Scroll to the first match
+      setTimeout(function() {
+        mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
   }
 }
 
