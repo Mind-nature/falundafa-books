@@ -1091,7 +1091,7 @@ var SEARCH_PAGE_SIZE = 30;
 function loadSearchIndex() {
   if (searchIndex || searchIndexLoading) return;
   searchIndexLoading = true;
-  fetch('search-index.json')
+  fetch('search-index.json?v=2')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       searchIndex = data;
