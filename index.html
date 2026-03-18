@@ -958,6 +958,8 @@ var savedScrollBooks = 0;
 var savedScrollChapters = 0;
 var savedScrollReader = {}; // key: "bookIdx_chapterIdx"
 
+var handlingPopstate = false;
+
 function showPage(view) {
   currentView = view;
   document.getElementById('pageBooks').classList.toggle('active', view === 'books');
@@ -965,7 +967,17 @@ function showPage(view) {
   document.getElementById('pageReader').classList.toggle('active', view === 'reader');
   document.getElementById('noticeBtn').style.display = (view === 'books') ? '' : 'none';
   document.getElementById('fontControls').style.display = (view === 'books') ? 'none' : '';
+  if (!handlingPopstate) {
+    history.pushState({ view: view }, '');
+  }
 }
+
+window.addEventListener('popstate', function(e) {
+  if (currentView === 'books') return;
+  handlingPopstate = true;
+  goBack();
+  handlingPopstate = false;
+});
 
 function goBack() {
   document.getElementById('pageNav').classList.remove('show');
