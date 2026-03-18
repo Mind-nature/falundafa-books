@@ -1150,7 +1150,12 @@ async function doSearch(query) {
     } else if (bk.chapters) {
       for (var ci = 0; ci < bk.chapters.length; ci++) {
         var ch = bk.chapters[ci];
-        allFiles.push({ bookIdx: bi, bookName: bk.name, name: ch.name, file: ch.file, chIdx: ci });
+        var chName = ch.name;
+        // 洪吟系列：從搜尋索引取詩名（第一行）
+        if ([15, 26].indexOf(bk.id) !== -1 && searchIndex && searchIndex[ch.file]) {
+          chName = searchIndex[ch.file].split('\n')[0] || ch.name;
+        }
+        allFiles.push({ bookIdx: bi, bookName: bk.name, name: chName, file: ch.file, chIdx: ci });
       }
     }
   }
