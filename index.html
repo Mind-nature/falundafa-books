@@ -214,6 +214,12 @@
     max-width: 100%;
     height: auto;
   }
+  .reader a[href$=".jpg"],
+  .reader a[href$=".png"],
+  .reader a[href$=".webp"] {
+    pointer-events: none;
+    cursor: default;
+  }
   .reader td {
     word-wrap: break-word;
     text-align: center;
@@ -1138,7 +1144,7 @@ async function doSearch(query) {
   var allFiles = [];
   for (var bi = 0; bi < books.length; bi++) {
     var bk = books[bi];
-    if (hongYinBooks.indexOf(bk.id) !== -1) continue;
+    if ([39, 45, 46, 51].indexOf(bk.id) !== -1) continue; // skip 洪吟三～六 (image only)
     if (bk.type === 'single') {
       allFiles.push({ bookIdx: bi, bookName: bk.name, name: bk.name, file: bk.file, chIdx: 0 });
     } else if (bk.chapters) {
