@@ -1503,10 +1503,11 @@ function clearAllCompleted() {
     // 檢查是否在閱讀頁面
     var readerPage = document.getElementById('pageReader');
     if (!readerPage || !readerPage.classList.contains('active')) return;
-    // 必須有實際滾動過（scrollY > 100）且滑到底部（距離底部 50px 以內）
+    // 頁面必須足夠長（內容已載入）且有實際滾動過，才檢測到底
+    var docHeight = document.documentElement.scrollHeight;
+    if (docHeight < window.innerHeight + 200) return;
     if (window.scrollY < 100) return;
     var scrollBottom = window.innerHeight + window.scrollY;
-    var docHeight = document.documentElement.scrollHeight;
     if (docHeight - scrollBottom > 50) return;
 
     var shouldComplete = false;
