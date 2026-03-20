@@ -817,6 +817,32 @@ function restoreReaderScroll() {
   setTimeout(function() { window.scrollTo(0, pos); }, 0);
 }
 
+// 短頁面（不需滾動）自動標記閱讀完成
+var _hongYinBooksShort = [15, 26, 39, 45, 46, 51];
+function checkShortPageComplete() {
+  if (currentBookIdx < 0) return;
+  var book = books[currentBookIdx];
+  if (!book) return;
+  var readerPage = document.getElementById('pageReader');
+  if (!readerPage || !readerPage.classList.contains('active')) return;
+  var docHeight = document.documentElement.scrollHeight;
+  if (docHeight >= window.innerHeight + 200) return; // 不是短頁面
+  if (docHeight < window.innerHeight + 50) return; // 內容尚未載入
+  var shouldComplete = false;
+  if (book.type === 'single') {
+    shouldComplete = true;
+  } else if (book.id === 52) {
+    if (currentChapterIdx === 45) shouldComplete = true;
+  } else if (_hongYinBooksShort.indexOf(book.id) !== -1) {
+    // 洪吟系列已在 openChapter 中處理
+  } else {
+    if (currentChapterIdx === book.chapters.length - 1) shouldComplete = true;
+  }
+  if (shouldComplete) {
+    localStorage.setItem('book_' + book.id + '_completed', '1');
+  }
+}
+
 function loadContent(filePath) {
   const reader = document.getElementById('readerContent');
   const iframe = document.getElementById('readerFrame');
@@ -839,6 +865,7 @@ function loadContent(filePath) {
     reader.innerHTML = contentCache[filePath];
     equalizeTableImageHeights();
     if (pendingSearchHighlight) { highlightAndScrollToSearch(); } else { restoreReaderScroll(); }
+    setTimeout(checkShortPageComplete, 300);
     return;
   }
 
@@ -853,6 +880,7 @@ function loadContent(filePath) {
       equalizeTableImageHeights();
       if (pendingSearchHighlight) { highlightAndScrollToSearch(); } else { restoreReaderScroll(); }
       preloadImagesFromHTML(cleaned);
+      setTimeout(checkShortPageComplete, 300);
     })
     .catch(function() {
       reader.innerHTML = '<div class="loading">載入失敗: ' + filePath + '</div>';
@@ -1535,7 +1563,8 @@ function renderXjwChapters(book) {
     if (!readerPage || !readerPage.classList.contains('active')) return;
     // 頁面必須足夠長（內容已載入）且有實際滾動過，才檢測到底
     var docHeight = document.documentElement.scrollHeight;
-    if (docHeight < window.innerHeight + 200) return;
+    var isShortPage = docHeight < window.innerHeight + 200;
+    if (isShortPage) return; // 短頁面由 checkShortPageComplete 處理
     if (window.scrollY < 100) return;
     var scrollBottom = window.innerHeight + window.scrollY;
     if (docHeight - scrollBottom > 50) return;
