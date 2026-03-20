@@ -472,7 +472,8 @@ function renderBooks() {
 
 function updateClearBtnLabel() {
   var hasAny = books.some(b => localStorage.getItem('book_' + b.id + '_completed'));
-  document.getElementById('clearProgressBtn').textContent = hasAny ? '🟢 清除所有已讀標記' : '清除所有已讀標記';
+  var btn = document.getElementById('clearProgressBtn');
+  btn.innerHTML = hasAny ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;margin-right:6px;vertical-align:middle;"></span>清除所有已讀標記' : '清除所有已讀標記';
 }
 
 function clearAllProgress() {
