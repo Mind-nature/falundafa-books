@@ -466,9 +466,6 @@ function renderBooks() {
       '<span class="arrow">›</span>' +
     '</div>';
   }).join('');
-  // 有任何已讀標記才顯示清除按鈕
-  var hasAny = books.some(b => localStorage.getItem('book_' + b.id + '_last'));
-  document.getElementById('clearProgressBtn').style.display = hasAny ? '' : 'none';
 }
 
 function clearAllProgress() {
@@ -1132,7 +1129,7 @@ function onSearchInput() {
   if (q.length < 2) {
     document.getElementById('searchResults').style.display = 'none';
     document.getElementById('bookList').style.display = '';
-    document.getElementById('clearProgressBtn').style.display = books.some(b => localStorage.getItem('book_' + b.id + '_last')) ? '' : 'none';
+    document.getElementById('clearProgressBtn').style.display = '';
     document.querySelector('#pageBooks > div:last-child').style.display = ''; // footer
     return;
   }
@@ -1144,7 +1141,7 @@ function clearSearch() {
   document.getElementById('searchClear').style.display = 'none';
   document.getElementById('searchResults').style.display = 'none';
   document.getElementById('bookList').style.display = '';
-  document.getElementById('clearProgressBtn').style.display = books.some(b => localStorage.getItem('book_' + b.id + '_last')) ? '' : 'none';
+  document.getElementById('clearProgressBtn').style.display = '';
   document.querySelector('#pageBooks > div:last-child').style.display = '';
   searchAllResults = [];
   searchCurrentPage = 0;
