@@ -1096,12 +1096,29 @@ function goBack() {
 // 字體大小
 // ============================================================
 function changeFontSize(delta) {
+  var prev = fontSize;
   fontSize = Math.max(14, Math.min(34, fontSize + delta * 2));
   const reader = document.getElementById('readerContent');
   if (reader) reader.style.fontSize = fontSize + 'px';
   const chapters = document.getElementById('chapterList');
   if (chapters) chapters.style.fontSize = fontSize + 'px';
   localStorage.setItem('fontSize', fontSize);
+  if (delta > 0 && fontSize === 34 && prev === 34) showToast('目前是最大字型，如需再放大可以用網頁的縮放功能');
+  if (delta < 0 && fontSize === 14 && prev === 14) showToast('目前是最小字型，如需再縮小可以用網頁的縮放功能');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:rgba(0,0,0,0.75);color:#fff;padding:10px 14px;border-radius:10px;font-size:14px;z-index:10000;pointer-events:none;text-align:center;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function(){ t.style.display = 'none'; }, 2000);
 }
 
 // ============================================================
