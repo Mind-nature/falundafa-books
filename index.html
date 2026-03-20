@@ -487,6 +487,7 @@ function clearAllProgress() {
     localStorage.removeItem('book_' + b.id + '_last');
     localStorage.removeItem('book_' + b.id + '_completed');
   });
+  savedScrollReader = {};
   renderBooks();
 }
 
