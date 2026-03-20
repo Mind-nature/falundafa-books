@@ -318,7 +318,7 @@
 
   /* 清除已讀標記按鈕 */
   .clear-progress-btn {
-    display: block; margin: 12px auto; padding: 8px 20px;
+    display: block; margin: 12px 0 12px 12px; padding: 8px 20px;
     background: none; border: 1px solid #ccc; border-radius: 20px;
     color: #888; font-size: 13px; cursor: pointer;
   }
@@ -467,6 +467,13 @@ function renderBooks() {
       '<span class="arrow">›</span>' +
     '</div>';
   }).join('');
+  updateClearBtnLabel();
+}
+
+function updateClearBtnLabel() {
+  var hasAny = books.some(b => localStorage.getItem('book_' + b.id + '_completed'));
+  var btn = document.getElementById('clearProgressBtn');
+  btn.innerHTML = hasAny ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#27ae60;margin-right:6px;vertical-align:middle;"></span>清除所有已讀標記' : '清除所有已讀標記';
 }
 
 function clearAllProgress() {
