@@ -315,6 +315,16 @@
     background: #27ae60; margin-right: 8px; display: none;
   }
   .book-item .progress-dot.has-progress { display: block; }
+
+  /* 清除已讀標記按鈕 */
+  .clear-progress-btn {
+    display: block; margin: 12px auto; padding: 8px 20px;
+    background: none; border: 1px solid #ccc; border-radius: 20px;
+    color: #888; font-size: 13px; cursor: pointer;
+  }
+  .clear-progress-btn:active { background: #f0f0f0; }
+  body.dark .clear-progress-btn { border-color: #444; color: #666; }
+  body.dark .clear-progress-btn:active { background: #222; }
 </style>
 </head>
 <body>
@@ -362,6 +372,7 @@
   </div>
   <div id="searchResults" style="padding:0 8px;display:none;"></div>
   <div class="book-list" id="bookList"></div>
+  <button class="clear-progress-btn" id="clearProgressBtn" onclick="clearAllProgress()">清除所有已讀標記</button>
   <div style="padding:20px 16px;font-size:16px;color:#666;line-height:2;">
     此網站是由大法弟子在法輪大法官網擷取的，並且優化成手機可觀看的模式，方便同修們觀看。<br>
     資料來源：<br>
@@ -455,6 +466,15 @@ function renderBooks() {
       '<span class="arrow">›</span>' +
     '</div>';
   }).join('');
+  // 有任何已讀標記才顯示清除按鈕
+  var hasAny = books.some(b => localStorage.getItem('book_' + b.id + '_last'));
+  document.getElementById('clearProgressBtn').style.display = hasAny ? '' : 'none';
+}
+
+function clearAllProgress() {
+  if (!confirm('確定要清除所有已讀標記嗎？')) return;
+  books.forEach(b => localStorage.removeItem('book_' + b.id + '_last'));
+  renderBooks();
 }
 
 // ============================================================
@@ -1112,6 +1132,7 @@ function onSearchInput() {
   if (q.length < 2) {
     document.getElementById('searchResults').style.display = 'none';
     document.getElementById('bookList').style.display = '';
+    document.getElementById('clearProgressBtn').style.display = books.some(b => localStorage.getItem('book_' + b.id + '_last')) ? '' : 'none';
     document.querySelector('#pageBooks > div:last-child').style.display = ''; // footer
     return;
   }
@@ -1123,6 +1144,7 @@ function clearSearch() {
   document.getElementById('searchClear').style.display = 'none';
   document.getElementById('searchResults').style.display = 'none';
   document.getElementById('bookList').style.display = '';
+  document.getElementById('clearProgressBtn').style.display = books.some(b => localStorage.getItem('book_' + b.id + '_last')) ? '' : 'none';
   document.querySelector('#pageBooks > div:last-child').style.display = '';
   searchAllResults = [];
   searchCurrentPage = 0;
@@ -1134,6 +1156,7 @@ async function doSearch(query) {
   var footerEl = document.querySelector('#pageBooks > div:last-child');
   resultsEl.style.display = 'block';
   bookListEl.style.display = 'none';
+  document.getElementById('clearProgressBtn').style.display = 'none';
   footerEl.style.display = 'none';
   resultsEl.innerHTML = '<div class="search-status">搜尋中...</div>';
 
