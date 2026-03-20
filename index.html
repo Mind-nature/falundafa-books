@@ -477,6 +477,11 @@ function updateClearBtnLabel() {
 }
 
 function clearAllProgress() {
+  var hasAny = books.some(b => localStorage.getItem('book_' + b.id + '_completed'));
+  if (!hasAny) {
+    alert('目前已經沒有已讀標記了');
+    return;
+  }
   if (!confirm('確定要清除所有已讀標記嗎？')) return;
   books.forEach(b => {
     localStorage.removeItem('book_' + b.id + '_last');
