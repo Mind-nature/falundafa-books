@@ -132,6 +132,20 @@
   body.dark .search-pagination button:active { background: #222; }
   .search-highlight { background: #fff3cd; padding: 0 2px; border-radius: 2px; }
   body.dark .search-highlight { background: #ffcc00; color: #000; }
+  .search-bar-float {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 12px; margin: 0 -16px 8px;
+    background: #fff3cd; color: #333; font-size: 13px; border-bottom: 1px solid #e0d5a0;
+  }
+  body.dark .search-bar-float { background: #3a3000; color: #ffcc00; border-bottom-color: #554400; }
+  .search-bar-float button {
+    background: none; border: none; cursor: pointer; color: #666; padding: 0 4px; line-height: 1;
+  }
+  .search-bar-float .nav-btn { font-size: 14px; }
+  .search-bar-float .close-btn { font-size: 18px; }
+  body.dark .search-bar-float button { color: #ffcc00; }
+  .search-highlight-current { outline: 2px solid #ff6600; }
 
   /* === 排序按鈕 === */
   .sort-btn {
@@ -1429,32 +1443,96 @@ function highlightAndScrollToSearch() {
   // Use TreeWalker to find text nodes containing the query
   var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
   var node;
+  var firstMark = null;
+  var nodesToReplace = [];
   while (node = walker.nextNode()) {
     var idx = node.textContent.indexOf(query);
     if (idx !== -1) {
-      // Split and wrap the match in a <mark>
-      var before = node.textContent.substring(0, idx);
-      var match = node.textContent.substring(idx, idx + query.length);
-      var after = node.textContent.substring(idx + query.length);
-      var mark = document.createElement('mark');
-      mark.textContent = match;
-      mark.className = 'search-highlight';
-      mark.style.background = '#fff3cd';
-      mark.style.padding = '0 2px';
-      mark.style.borderRadius = '2px';
-      var parent = node.parentNode;
-      var frag = document.createDocumentFragment();
-      if (before) frag.appendChild(document.createTextNode(before));
-      frag.appendChild(mark);
-      if (after) frag.appendChild(document.createTextNode(after));
-      parent.replaceChild(frag, node);
-      // Scroll to the first match
-      setTimeout(function() {
-        mark.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-      return;
+      nodesToReplace.push(node);
     }
   }
+  nodesToReplace.forEach(function(node) {
+    var idx = node.textContent.indexOf(query);
+    if (idx === -1) return;
+    var before = node.textContent.substring(0, idx);
+    var match = node.textContent.substring(idx, idx + query.length);
+    var after = node.textContent.substring(idx + query.length);
+    var mark = document.createElement('mark');
+    mark.textContent = match;
+    mark.className = 'search-highlight';
+    var parent = node.parentNode;
+    var frag = document.createDocumentFragment();
+    if (before) frag.appendChild(document.createTextNode(before));
+    frag.appendChild(mark);
+    if (after) frag.appendChild(document.createTextNode(after));
+    parent.replaceChild(frag, node);
+    if (!firstMark) firstMark = mark;
+  });
+
+  // Add floating search bar with navigation
+  var oldBar = reader.querySelector('.search-bar-float');
+  if (oldBar) oldBar.remove();
+  var allMarks = reader.querySelectorAll('mark.search-highlight');
+  if (allMarks.length > 0) {
+    window._searchHighlightIdx = 0;
+    var bar = document.createElement('div');
+    bar.className = 'search-bar-float';
+    var info = '<span>搜尋：' + query + '</span>';
+    var nav = '<span style="display:flex;align-items:center;gap:4px;">';
+    nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
+    nav += '<span class="sh-counter">1 / ' + allMarks.length + '</span>';
+    nav += '<button class="nav-btn" data-dir="next" title="下一個">▼</button>';
+    nav += '<button class="close-btn" title="清除高亮">✕</button>';
+    nav += '</span>';
+    bar.innerHTML = info + nav;
+    bar.querySelector('.close-btn').addEventListener('click', function() {
+      clearSearchHighlights();
+    });
+    bar.querySelectorAll('.nav-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        navigateSearchHighlight(btn.dataset.dir);
+      });
+    });
+    reader.insertBefore(bar, reader.firstChild);
+    // Highlight first match
+    allMarks[0].classList.add('search-highlight-current');
+    setTimeout(function() {
+      allMarks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+}
+
+function navigateSearchHighlight(dir) {
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+  var marks = reader.querySelectorAll('mark.search-highlight');
+  if (marks.length === 0) return;
+  var idx = window._searchHighlightIdx || 0;
+  marks[idx].classList.remove('search-highlight-current');
+  if (dir === 'next') {
+    idx = (idx + 1) % marks.length;
+  } else {
+    idx = (idx - 1 + marks.length) % marks.length;
+  }
+  window._searchHighlightIdx = idx;
+  marks[idx].classList.add('search-highlight-current');
+  marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  var counter = reader.querySelector('.sh-counter');
+  if (counter) counter.textContent = (idx + 1) + ' / ' + marks.length;
+}
+
+function clearSearchHighlights() {
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+  var bar = reader.querySelector('.search-bar-float');
+  if (bar) bar.remove();
+  var marks = reader.querySelectorAll('mark.search-highlight');
+  marks.forEach(function(mark) {
+    var parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parent.normalize();
+  });
+  window._searchHighlightIdx = 0;
 }
 
 async function getTextContent(filePath) {
