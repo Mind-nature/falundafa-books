@@ -1354,12 +1354,23 @@ function showSearchResultsPage() {
     html += '<span class="sg-count">' + grp.items.length + ' 個結果</span>';
     html += '</div>';
     html += '<div class="search-group-body">';
+    // Count occurrences per chapter within this book group
+    var chOccCount = {};
+    for (var j = 0; j < grp.items.length; j++) {
+      var key = grp.items[j].chIdx;
+      chOccCount[key] = (chOccCount[key] || 0) + 1;
+    }
+    var chOccSeen = {};
     for (var j = 0; j < grp.items.length; j++) {
       var r = grp.items[j];
-      var snippetText = r.snippet.replace(/<mark>/g, '').replace(/<\/mark>/g, '');
+      var key = r.chIdx;
+      chOccSeen[key] = (chOccSeen[key] || 0) + 1;
+      var occIdx = chOccSeen[key] - 1;
+      var occTotal = chOccCount[key];
       var searchQuery = document.getElementById('searchInput').value.trim();
-      html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\')">' +
-        '<span class="sr-chapter">' + r.chName + '</span>' +
+      var chLabel = r.chName + ' ' + (occIdx + 1) + '/' + occTotal;
+      html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\',' + occIdx + ',' + occTotal + ')">' +
+        '<span class="sr-chapter">' + chLabel + '</span>' +
         '<div class="sr-snippet">' + r.snippet + '</div>' +
       '</div>';
     }
@@ -1417,9 +1428,11 @@ function searchPrevPage() {
 var pendingSearchHighlight = null;
 var cameFromSearch = false;
 
-function openSearchResult(bookIdx, chIdx, encodedQuery) {
+function openSearchResult(bookIdx, chIdx, encodedQuery, occIdx, occTotal) {
   var query = encodedQuery ? decodeURIComponent(encodedQuery) : '';
   pendingSearchHighlight = query || null;
+  window._pendingOccIdx = occIdx || 0;
+  window._pendingOccTotal = occTotal || 1;
   cameFromSearch = true;
   currentBookIdx = bookIdx;
   var book = books[bookIdx];
@@ -1479,13 +1492,19 @@ function highlightAndScrollToSearch() {
   if (oldBar) oldBar.remove();
   var allMarks = reader.querySelectorAll('mark.search-highlight');
   if (allMarks.length > 0) {
-    window._searchHighlightIdx = 0;
+    var occIdx = window._pendingOccIdx || 0;
+    var occTotal = window._pendingOccTotal || allMarks.length;
+    window._pendingOccIdx = 0;
+    window._pendingOccTotal = 1;
+    // Start at the correct occurrence
+    var startIdx = Math.min(occIdx, allMarks.length - 1);
+    window._searchHighlightIdx = startIdx;
     var bar = document.createElement('div');
     bar.className = 'search-bar-float';
     var info = '<span>搜尋：' + query + '</span>';
     var nav = '<span style="display:flex;align-items:center;gap:4px;">';
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
-    nav += '<span class="sh-counter">1/' + allMarks.length + '</span>';
+    nav += '<span class="sh-counter">' + (occIdx + 1) + '/' + occTotal + '</span>';
     nav += '<button class="nav-btn" data-dir="next" title="下一個">▼</button>';
     nav += '<button class="toggle-btn" title="清除標註">清除標註</button>';
     nav += '</span>';
@@ -1495,19 +1514,19 @@ function highlightAndScrollToSearch() {
     });
     bar.querySelectorAll('.nav-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        navigateSearchHighlight(btn.dataset.dir);
+        navigateSearchHighlight(btn.dataset.dir, occTotal);
       });
     });
     document.body.appendChild(bar);
-    // Highlight first match
-    allMarks[0].classList.add('search-highlight-current');
+    // Highlight the target match
+    allMarks[startIdx].classList.add('search-highlight-current');
     setTimeout(function() {
-      allMarks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      allMarks[startIdx].scrollIntoView({ behavior: 'smooth', block: 'center' });
     }, 100);
   }
 }
 
-function navigateSearchHighlight(dir) {
+function navigateSearchHighlight(dir, occTotal) {
   var reader = document.querySelector('.reader');
   if (!reader) return;
   var marks = reader.querySelectorAll('mark.search-highlight');
@@ -1523,7 +1542,8 @@ function navigateSearchHighlight(dir) {
   marks[idx].classList.add('search-highlight-current');
   marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
   var counter = document.querySelector('.sh-counter');
-  if (counter) counter.textContent = (idx + 1) + '/' + marks.length;
+  var total = occTotal || marks.length;
+  if (counter) counter.textContent = (idx + 1) + '/' + total;
 }
 
 function toggleSearchHighlights(btn) {
