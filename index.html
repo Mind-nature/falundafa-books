@@ -827,7 +827,8 @@ function checkShortPageComplete() {
   if (!readerPage || !readerPage.classList.contains('active')) return;
   var docHeight = document.documentElement.scrollHeight;
   if (docHeight >= window.innerHeight + 200) return; // 不是短頁面
-  if (docHeight < window.innerHeight + 50) return; // 內容尚未載入
+  var readerContent = document.getElementById('readerContent');
+  if (!readerContent || readerContent.innerHTML.trim().length < 10) return; // 內容尚未載入
   var shouldComplete = false;
   if (book.type === 'single') {
     shouldComplete = true;
