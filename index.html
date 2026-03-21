@@ -133,18 +133,21 @@
   .search-highlight { background: #fff3cd; padding: 0 2px; border-radius: 2px; }
   body.dark .search-highlight { background: #ffcc00; color: #000; }
   .search-bar-float {
-    position: sticky; top: 0; z-index: 50;
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 6px 12px; margin: 0 -16px 8px;
-    background: #fff3cd; color: #333; font-size: 13px; border-bottom: 1px solid #e0d5a0;
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; border-radius: 20px;
+    background: rgba(50,50,50,0.9); color: #fff; font-size: 13px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.3); white-space: nowrap;
   }
-  body.dark .search-bar-float { background: #3a3000; color: #ffcc00; border-bottom-color: #554400; }
+  body.dark .search-bar-float { background: rgba(60,60,60,0.95); }
   .search-bar-float button {
-    background: none; border: none; cursor: pointer; color: #666; padding: 0 4px; line-height: 1;
+    background: none; border: none; cursor: pointer; color: #fff; padding: 0 4px; line-height: 1;
   }
   .search-bar-float .nav-btn { font-size: 14px; }
-  .search-bar-float .close-btn { font-size: 18px; }
-  body.dark .search-bar-float button { color: #ffcc00; }
+  .search-bar-float .toggle-btn {
+    font-size: 12px; padding: 2px 8px; border-radius: 10px;
+    background: rgba(255,255,255,0.2); color: #fff; margin-left: 4px;
+  }
   .search-highlight-current { outline: 2px solid #ff6600; }
 
   /* === 排序按鈕 === */
@@ -1083,6 +1086,7 @@ window.addEventListener('popstate', function(e) {
 
 function goBack() {
   document.getElementById('pageNav').classList.remove('show');
+  clearSearchHighlights();
   if (currentView === 'reader') {
     // 記住閱讀器滾動位置
     savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
@@ -1190,7 +1194,7 @@ var SEARCH_PAGE_SIZE = 30;
 function loadSearchIndex() {
   if (searchIndex || searchIndexLoading) return;
   searchIndexLoading = true;
-  fetch('search-index.json?v=2')
+  fetch('search-index.json?v=3')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       searchIndex = data;
@@ -1227,6 +1231,7 @@ function clearSearch() {
   document.querySelector('#pageBooks > div:last-child').style.display = '';
   searchAllResults = [];
   searchCurrentPage = 0;
+  clearSearchHighlights();
 }
 
 async function doSearch(query) {
@@ -1470,7 +1475,7 @@ function highlightAndScrollToSearch() {
   });
 
   // Add floating search bar with navigation
-  var oldBar = reader.querySelector('.search-bar-float');
+  var oldBar = document.querySelector('.search-bar-float');
   if (oldBar) oldBar.remove();
   var allMarks = reader.querySelectorAll('mark.search-highlight');
   if (allMarks.length > 0) {
@@ -1482,18 +1487,18 @@ function highlightAndScrollToSearch() {
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
     nav += '<span class="sh-counter">1 / ' + allMarks.length + '</span>';
     nav += '<button class="nav-btn" data-dir="next" title="下一個">▼</button>';
-    nav += '<button class="close-btn" title="清除高亮">✕</button>';
+    nav += '<button class="toggle-btn" title="清除標註">清除標註</button>';
     nav += '</span>';
     bar.innerHTML = info + nav;
-    bar.querySelector('.close-btn').addEventListener('click', function() {
-      clearSearchHighlights();
+    bar.querySelector('.toggle-btn').addEventListener('click', function() {
+      toggleSearchHighlights(this);
     });
     bar.querySelectorAll('.nav-btn').forEach(function(btn) {
       btn.addEventListener('click', function() {
         navigateSearchHighlight(btn.dataset.dir);
       });
     });
-    reader.insertBefore(bar, reader.firstChild);
+    document.body.appendChild(bar);
     // Highlight first match
     allMarks[0].classList.add('search-highlight-current');
     setTimeout(function() {
@@ -1521,10 +1526,36 @@ function navigateSearchHighlight(dir) {
   if (counter) counter.textContent = (idx + 1) + ' / ' + marks.length;
 }
 
+function toggleSearchHighlights(btn) {
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+  var marks = reader.querySelectorAll('mark.search-highlight');
+  var hidden = marks.length > 0 && marks[0].style.backgroundColor === 'transparent';
+  if (hidden) {
+    // Show highlights
+    marks.forEach(function(mark) {
+      mark.style.backgroundColor = '';
+      mark.style.color = '';
+    });
+    if (window._searchHighlightIdx !== undefined && marks[window._searchHighlightIdx]) {
+      marks[window._searchHighlightIdx].classList.add('search-highlight-current');
+    }
+    btn.textContent = '清除標註';
+  } else {
+    // Hide highlights
+    marks.forEach(function(mark) {
+      mark.style.backgroundColor = 'transparent';
+      mark.style.color = 'inherit';
+      mark.classList.remove('search-highlight-current');
+    });
+    btn.textContent = '顯示標註';
+  }
+}
+
 function clearSearchHighlights() {
   var reader = document.querySelector('.reader');
   if (!reader) return;
-  var bar = reader.querySelector('.search-bar-float');
+  var bar = document.querySelector('.search-bar-float');
   if (bar) bar.remove();
   var marks = reader.querySelectorAll('mark.search-highlight');
   marks.forEach(function(mark) {
