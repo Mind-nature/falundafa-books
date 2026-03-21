@@ -1194,7 +1194,7 @@ var SEARCH_PAGE_SIZE = 30;
 function loadSearchIndex() {
   if (searchIndex || searchIndexLoading) return;
   searchIndexLoading = true;
-  fetch('search-index.json?v=4')
+  fetch('search-index.json?v=5')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       searchIndex = data;
@@ -1451,27 +1451,27 @@ function highlightAndScrollToSearch() {
   var firstMark = null;
   var nodesToReplace = [];
   while (node = walker.nextNode()) {
-    var idx = node.textContent.indexOf(query);
-    if (idx !== -1) {
+    if (node.textContent.indexOf(query) !== -1) {
       nodesToReplace.push(node);
     }
   }
   nodesToReplace.forEach(function(node) {
-    var idx = node.textContent.indexOf(query);
-    if (idx === -1) return;
-    var before = node.textContent.substring(0, idx);
-    var match = node.textContent.substring(idx, idx + query.length);
-    var after = node.textContent.substring(idx + query.length);
-    var mark = document.createElement('mark');
-    mark.textContent = match;
-    mark.className = 'search-highlight';
+    var text = node.textContent;
     var parent = node.parentNode;
     var frag = document.createDocumentFragment();
-    if (before) frag.appendChild(document.createTextNode(before));
-    frag.appendChild(mark);
-    if (after) frag.appendChild(document.createTextNode(after));
+    var pos = 0;
+    var idx;
+    while ((idx = text.indexOf(query, pos)) !== -1) {
+      if (idx > pos) frag.appendChild(document.createTextNode(text.substring(pos, idx)));
+      var mark = document.createElement('mark');
+      mark.textContent = query;
+      mark.className = 'search-highlight';
+      frag.appendChild(mark);
+      if (!firstMark) firstMark = mark;
+      pos = idx + query.length;
+    }
+    if (pos < text.length) frag.appendChild(document.createTextNode(text.substring(pos)));
     parent.replaceChild(frag, node);
-    if (!firstMark) firstMark = mark;
   });
 
   // Add floating search bar with navigation
@@ -1485,7 +1485,7 @@ function highlightAndScrollToSearch() {
     var info = '<span>搜尋：' + query + '</span>';
     var nav = '<span style="display:flex;align-items:center;gap:4px;">';
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
-    nav += '<span class="sh-counter">1 / ' + allMarks.length + '</span>';
+    nav += '<span class="sh-counter">1/' + allMarks.length + '</span>';
     nav += '<button class="nav-btn" data-dir="next" title="下一個">▼</button>';
     nav += '<button class="toggle-btn" title="清除標註">清除標註</button>';
     nav += '</span>';
@@ -1522,8 +1522,8 @@ function navigateSearchHighlight(dir) {
   window._searchHighlightIdx = idx;
   marks[idx].classList.add('search-highlight-current');
   marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
-  var counter = reader.querySelector('.sh-counter');
-  if (counter) counter.textContent = (idx + 1) + ' / ' + marks.length;
+  var counter = document.querySelector('.sh-counter');
+  if (counter) counter.textContent = (idx + 1) + '/' + marks.length;
 }
 
 function toggleSearchHighlights(btn) {
