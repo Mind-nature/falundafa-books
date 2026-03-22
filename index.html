@@ -1265,7 +1265,9 @@ loadSearchIndex();
 
 function onSearchInput() {
   var q = document.getElementById('searchInput').value.trim();
-  document.getElementById('searchClear').style.display = q ? 'block' : 'none';
+  var hasClear = q ? true : false;
+  document.getElementById('searchClear').style.display = hasClear ? 'block' : 'none';
+  document.getElementById('scopeFilterBtn').style.right = hasClear ? '36px' : '8px';
   clearTimeout(searchTimer);
   if (q.length < 2) {
     document.getElementById('searchResults').style.display = 'none';
