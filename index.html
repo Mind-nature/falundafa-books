@@ -56,10 +56,13 @@
   }
   .notice-overlay.show { display: flex; }
   .notice-box {
-    background: white; border-radius: 12px; padding: 24px;
-    max-width: 540px; width: 100%; max-height: 80vh; overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3); line-height: 1.9; font-size: 15px;
+    background: white; border-radius: 12px; position: relative;
+    max-width: 540px; width: 100%; max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
     color: #333;
+  }
+  .notice-content {
+    padding: 24px; overflow-y: auto; line-height: 1.9; font-size: 15px;
   }
   .notice-box h3 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #0a2e4a; }
   .notice-box .notice-item { margin-bottom: 10px; }
@@ -70,6 +73,15 @@
     font-size: 15px; cursor: pointer;
   }
   .notice-box .notice-close:active { background: #1a4a6a; }
+  .notice-box { position: relative; }
+  .notice-x {
+    position: absolute; top: -12px; right: -12px; border: none;
+    font-size: 16px; cursor: pointer; color: white; line-height: 1;
+    z-index: 1; background: rgba(10, 46, 74, 0.8); border-radius: 50%;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  }
+  .notice-x:hover { color: #333; }
+  body.notice-open { overflow: hidden; }
 
   #pageNav {
     display: none; align-items: center; gap: 4px; color: white; font-size: 12px;
@@ -390,7 +402,7 @@
     <input type="number" id="pageInput" min="1" placeholder="1" onkeydown="if(event.key==='Enter'){goToPage(this.value);this.blur();}" onfocus="this.select();">
     <span id="pageInfo"></span>
   </div>
-  <button class="notice-btn" id="noticeBtn" onclick="document.getElementById('noticeOverlay').classList.add('show')">閱讀前注意事項</button>
+  <button class="notice-btn" id="noticeBtn" onclick="openNotice()">閱讀前注意事項</button>
   <button class="notice-btn" id="manualBtn" onclick="window.open('https://brawny-feather-d76.notion.site/falundafa-books-manual','_blank')">使用說明</button>
   <div class="font-controls" id="fontControls">
     <button onclick="changeFontSize(-1)">A-</button>
@@ -400,19 +412,22 @@
 </div>
 
 <!-- 注意事項彈窗 -->
-<div class="notice-overlay" id="noticeOverlay" onclick="if(event.target===this)this.classList.remove('show')">
+<div class="notice-overlay" id="noticeOverlay" onclick="if(event.target===this)closeNotice()">
   <div class="notice-box">
-    <h3>閱讀前注意事項</h3>
-    <p>閱讀《轉法輪》的核心注意事項是系統通讀、不挑章節、無求之心、專一修煉。建議依照成書順序完整閱讀，切忌只讀局部，並要排除想治病或求神通的執著心，在靜心中領悟法理。書中建議修煉者不可腳踩兩隻船，專心學法能無所求而自得。</p>
-    <p style="margin-top:12px;"><b>以下是《轉法輪》閱讀的具體事項：</b></p>
-    <div class="notice-item"><b>系統通讀：</b>從第一講按順序讀至第九講，不跳章、不挑內容，完整通讀。</div>
-    <div class="notice-item"><b>排除有求之心：</b>學法時不應抱著治病、求功能或其他目的，否則難以領悟高深內涵，做到「無所求而自得」。</div>
-    <div class="notice-item"><b>專一修煉：</b>修煉要專一，不可同時混雜其他法門的書籍，避免「腳踩兩隻船」。</div>
-    <div class="notice-item"><b>學法與修心：</b>重點在於「修心」，以真、善、忍為標準提高心性。</div>
-    <div class="notice-item"><b>正確認識：</b>書中包含了修煉從入門到圓滿的所有法理，反覆閱讀能解決修煉中產生的疑問。</div>
-    <div class="notice-item"><b>不收費：</b>法輪功修煉者，不求名、不求利，在全世界都是義務教功，而且一切活動公開且免費。</div>
-    <div class="notice-item">初學者建議反覆通讀，體會法理的深度。</div>
-    <button class="notice-close" onclick="document.getElementById('noticeOverlay').classList.remove('show')">關閉</button>
+    <button class="notice-x" onclick="closeNotice()">✕</button>
+    <div class="notice-content">
+      <h3>閱讀前注意事項</h3>
+      <p>閱讀《轉法輪》的核心注意事項是系統通讀、不挑章節、無求之心、專一修煉。建議依照成書順序完整閱讀，切忌只讀局部，並要排除想治病或求神通的執著心，在靜心中領悟法理。書中建議修煉者不可腳踩兩隻船，專心學法能無所求而自得。</p>
+      <p style="margin-top:12px;"><b>以下是《轉法輪》閱讀的具體事項：</b></p>
+      <div class="notice-item"><b>系統通讀：</b>從第一講按順序讀至第九講，不跳章、不挑內容，完整通讀。</div>
+      <div class="notice-item"><b>排除有求之心：</b>學法時不應抱著治病、求功能或其他目的，否則難以領悟高深內涵，做到「無所求而自得」。</div>
+      <div class="notice-item"><b>專一修煉：</b>修煉要專一，不可同時混雜其他法門的書籍，避免「腳踩兩隻船」。</div>
+      <div class="notice-item"><b>學法與修心：</b>重點在於「修心」，以真、善、忍為標準提高心性。</div>
+      <div class="notice-item"><b>正確認識：</b>書中包含了修煉從入門到圓滿的所有法理，反覆閱讀能解決修煉中產生的疑問。</div>
+      <div class="notice-item"><b>不收費：</b>法輪功修煉者，不求名、不求利，在全世界都是義務教功，而且一切活動公開且免費。</div>
+      <div class="notice-item">初學者建議反覆通讀，體會法理的深度。</div>
+      <button class="notice-close" onclick="closeNotice()">關閉</button>
+    </div>
   </div>
 </div>
 
@@ -1229,6 +1244,14 @@ function showToast(msg) {
 // ============================================================
 // 深色模式
 // ============================================================
+function openNotice() {
+  document.getElementById('noticeOverlay').classList.add('show');
+  document.body.classList.add('notice-open');
+}
+function closeNotice() {
+  document.getElementById('noticeOverlay').classList.remove('show');
+  document.body.classList.remove('notice-open');
+}
 function toggleDark() {
   document.body.classList.toggle('dark');
   const isDark = document.body.classList.contains('dark');
