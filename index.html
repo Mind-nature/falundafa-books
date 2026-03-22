@@ -120,7 +120,35 @@
   .search-result .sr-snippet { font-size: 14px; color: #333; margin-top: 4px; line-height: 1.6; }
   .search-result .sr-snippet mark { background: #fff3cd; color: #333; padding: 0 1px; border-radius: 2px; }
   .search-status { text-align: center; padding: 20px; color: #888; font-size: 14px; }
-  body.dark .search-box input { background: #111; color: #fff; border-color: #333; }
+  body.dark .search-box input, body.dark .search-box select { background: #111; color: #fff; border-color: #333; }
+  .scope-filter-btn {
+    position: absolute; right: 36px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; font-size: 18px; cursor: pointer; color: #666; padding: 4px 8px; z-index: 2;
+  }
+  .scope-filter-btn.active { color: #4a90d9; }
+  body.dark .scope-filter-btn { color: #aaa; }
+  body.dark .scope-filter-btn.active { color: #4a90d9; }
+  .scope-tag {
+    display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0; border-radius: 10px;
+    background: #e8f0fe; color: #1a73e8; font-size: 12px; cursor: pointer;
+  }
+  .scope-tag:hover { background: #d2e3fc; }
+  body.dark .scope-tag { background: #1e3a5f; color: #8ab4f8; }
+  body.dark .scope-tag:hover { background: #264a6e; }
+  #scopePanel input[type="checkbox"] {
+    appearance: none; -webkit-appearance: none; width: 18px; height: 18px;
+    border: none; background: none; cursor: pointer; vertical-align: middle;
+    position: relative; flex-shrink: 0;
+  }
+  #scopePanel input[type="checkbox"]:checked::after {
+    content: '✔'; color: #4a90d9; font-size: 16px; position: absolute;
+    top: -2px; left: 0;
+  }
+  body.dark #scopePanel input[type="checkbox"]:checked::after { color: #6bb3f7; }
+  body.dark #scopePanel { background: #1a1a1a; border-color: #333; }
+  body.dark #scopePanel label { color: #ddd; border-bottom-color: #333; }
+  body.dark #scopePanel label:active { background: #222; }
+  body.dark #scopeTags { color: #aaa; }
   body.dark .search-result { background: #111; color: #fff; border: 1px solid #222; }
   body.dark .search-result:active { background: #222; }
   body.dark .search-result .sr-snippet { color: #ddd; }
@@ -391,7 +419,17 @@
   <div class="search-box">
     <div class="search-wrapper">
       <input type="text" id="searchInput" placeholder="經文檢索（至少輸入2個字）" oninput="onSearchInput()">
+      <button class="scope-filter-btn" id="scopeFilterBtn" onclick="toggleScopeDropdown()" title="篩選書籍">☰</button>
       <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+    <div id="scopeTags" style="display:none;padding:4px 0;font-size:12px;color:#666;line-height:1.8;"></div>
+    <div class="scope-dropdown" style="position:relative;">
+      <div id="scopePanel" style="display:none;position:absolute;top:0;left:0;right:0;max-height:300px;overflow-y:auto;background:#fff;border:1px solid #ddd;border-radius:8px;margin-top:4px;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+        <label style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border-bottom:1px solid #eee;font-weight:bold;cursor:pointer;font-size:14px;">
+          全部書籍<input type="checkbox" id="scopeAll" checked onchange="toggleScopeAll(this)">
+        </label>
+        <div id="scopeBooks"></div>
+      </div>
     </div>
   </div>
   <div id="searchResults" style="padding:0 8px;display:none;"></div>
@@ -492,6 +530,16 @@ function renderBooks() {
     '</div>';
   }).join('');
   updateClearBtnLabel();
+  // Populate search scope checkboxes
+  var scopeBooks = document.getElementById('scopeBooks');
+  if (scopeBooks && scopeBooks.children.length === 0) {
+    books.forEach(function(b, i) {
+      var label = document.createElement('label');
+      label.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:6px 12px;cursor:pointer;font-size:13px;';
+      label.innerHTML = b.name + '<input type="checkbox" class="scope-cb" value="' + i + '" checked onchange="updateScopeBtn()">';
+      scopeBooks.appendChild(label);
+    });
+  }
 }
 
 function updateClearBtnLabel() {
@@ -1229,6 +1277,73 @@ function onSearchInput() {
   searchTimer = setTimeout(function() { doSearch(q); }, 500);
 }
 
+function toggleScopeDropdown() {
+  var panel = document.getElementById('scopePanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+}
+
+function toggleScopeAll(el) {
+  var cbs = document.querySelectorAll('.scope-cb');
+  cbs.forEach(function(cb) { cb.checked = el.checked; });
+  updateScopeBtn();
+}
+
+function updateScopeBtn() {
+  var cbs = document.querySelectorAll('.scope-cb');
+  var checked = document.querySelectorAll('.scope-cb:checked');
+  var allCb = document.getElementById('scopeAll');
+  allCb.checked = checked.length === cbs.length;
+  var filterBtn = document.getElementById('scopeFilterBtn');
+  var tagsEl = document.getElementById('scopeTags');
+  var isAll = checked.length === 0 || checked.length === cbs.length;
+  filterBtn.classList.toggle('active', !isAll);
+  if (isAll) {
+    tagsEl.innerHTML = '搜尋條件：全部書籍';
+    tagsEl.style.display = 'block';
+  } else {
+    var html = '搜尋條件：';
+    var MAX_TAGS = 5;
+    var arr = Array.prototype.slice.call(checked);
+    var showArr = arr.slice(0, MAX_TAGS);
+    showArr.forEach(function(cb) {
+      var name = books[parseInt(cb.value)].name;
+      html += '<span class="scope-tag" onclick="removeScopeTag(' + cb.value + ')">' + name + ' ✕</span>';
+    });
+    if (arr.length > MAX_TAGS) {
+      html += '<span class="scope-tag" onclick="expandScopeTags()" id="scopeMoreBtn">...還有 ' + (arr.length - MAX_TAGS) + ' 本</span>';
+    }
+    tagsEl.innerHTML = html;
+    tagsEl.style.display = 'block';
+  }
+  // Re-trigger search if there's a query
+  onSearchInput();
+}
+
+function expandScopeTags() {
+  var checked = document.querySelectorAll('.scope-cb:checked');
+  var tagsEl = document.getElementById('scopeTags');
+  var html = '搜尋條件：';
+  checked.forEach(function(cb) {
+    var name = books[parseInt(cb.value)].name;
+    html += '<span class="scope-tag" onclick="removeScopeTag(' + cb.value + ')">' + name + ' ✕</span>';
+  });
+  tagsEl.innerHTML = html;
+}
+
+function removeScopeTag(idx) {
+  var cb = document.querySelector('.scope-cb[value="' + idx + '"]');
+  if (cb) { cb.checked = false; updateScopeBtn(); }
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  var dropdown = document.querySelector('.scope-dropdown');
+  var filterBtn = document.getElementById('scopeFilterBtn');
+  if (dropdown && !dropdown.contains(e.target) && e.target !== filterBtn) {
+    document.getElementById('scopePanel').style.display = 'none';
+  }
+});
+
 function clearSearch() {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchClear').style.display = 'none';
@@ -1255,8 +1370,16 @@ async function doSearch(query) {
   searchCurrentPage = 0;
 
   // Build file list
+  var checkedScopes = document.querySelectorAll('.scope-cb:checked');
+  var allScopes = document.querySelectorAll('.scope-cb');
+  var scopeAll = checkedScopes.length === 0 || checkedScopes.length === allScopes.length;
+  var scopeSet = {};
+  if (!scopeAll) {
+    checkedScopes.forEach(function(cb) { scopeSet[parseInt(cb.value)] = true; });
+  }
   var allFiles = [];
   for (var bi = 0; bi < books.length; bi++) {
+    if (!scopeAll && !scopeSet[bi]) continue;
     var bk = books[bi];
     if ([39, 45, 46, 51].indexOf(bk.id) !== -1) continue; // skip 洪吟三～六 (image only)
     if (bk.type === 'single') {
