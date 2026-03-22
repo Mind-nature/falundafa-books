@@ -134,10 +134,11 @@
   body.dark .search-highlight { background: #ffcc00; color: #000; }
   .search-bar-float {
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 18px; border-radius: 26px;
-    background: rgba(50,50,50,0.9); color: #fff; font-size: 16px;
+    display: flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 26px;
+    background: rgba(50,50,50,0.9); color: #fff; font-size: 14px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.3); white-space: nowrap;
+    max-width: 95vw;
   }
   body.dark .search-bar-float { background: rgba(60,60,60,0.95); }
   .search-bar-float button {
@@ -150,8 +151,8 @@
   }
   .capsule-search-input {
     background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 8px; color: #fff; font-size: 14px; padding: 4px 8px;
-    width: 80px; outline: none;
+    border-radius: 8px; color: #fff; font-size: 13px; padding: 4px 6px;
+    width: 60px; min-width: 40px; outline: none;
   }
   .capsule-search-input:focus { border-color: #4a90d9; background: rgba(255,255,255,0.25); }
   .search-highlight-current { outline: 2px solid #ff6600; }
@@ -1510,7 +1511,7 @@ function highlightAndScrollToSearch() {
     var info = '<span style="margin-right:2px;">搜尋:</span><input class="capsule-search-input" type="text" value="' + query.replace(/"/g, '&quot;') + '" placeholder="搜尋...">';
     var nav = '<span style="display:flex;align-items:center;gap:4px;">';
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
-    nav += '<span class="sh-counter">' + (occIdx + 1) + '/' + occTotal + '</span>';
+    nav += '<span class="sh-counter">' + (startIdx + 1) + '/' + allMarks.length + '</span>';
     nav += '<button class="nav-btn" data-dir="next" title="下一個">▼</button>';
     nav += '<button class="toggle-btn" title="清除標註">清除標註</button>';
     nav += '</span>';
@@ -1522,13 +1523,13 @@ function highlightAndScrollToSearch() {
         if (newQuery) reSearchInArticle(newQuery);
       }
     });
-    bar.querySelector('.toggle-btn').addEventListener('click', function() {
+    bar.querySelector('.toggle-btn').onclick = function() {
       toggleSearchHighlights(this);
-    });
+    };
     bar.querySelectorAll('.nav-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        navigateSearchHighlight(btn.dataset.dir, occTotal);
-      });
+      btn.onclick = function() {
+        navigateSearchHighlight(btn.dataset.dir);
+      };
     });
     document.body.appendChild(bar);
     // Highlight the target match
@@ -1539,13 +1540,13 @@ function highlightAndScrollToSearch() {
   }
 }
 
-function navigateSearchHighlight(dir, occTotal) {
+function navigateSearchHighlight(dir) {
   var reader = document.querySelector('.reader');
   if (!reader) return;
   var marks = reader.querySelectorAll('mark.search-highlight');
   if (marks.length === 0) return;
   var idx = window._searchHighlightIdx || 0;
-  marks[idx].classList.remove('search-highlight-current');
+  if (idx < marks.length) marks[idx].classList.remove('search-highlight-current');
   if (dir === 'next') {
     idx = (idx + 1) % marks.length;
   } else {
@@ -1555,8 +1556,7 @@ function navigateSearchHighlight(dir, occTotal) {
   marks[idx].classList.add('search-highlight-current');
   marks[idx].scrollIntoView({ behavior: 'smooth', block: 'center' });
   var counter = document.querySelector('.sh-counter');
-  var total = occTotal || marks.length;
-  if (counter) counter.textContent = (idx + 1) + '/' + total;
+  if (counter) counter.textContent = (idx + 1) + '/' + marks.length;
 }
 
 function reSearchInArticle(query) {
@@ -1608,7 +1608,7 @@ function reSearchInArticle(query) {
     var bar = document.querySelector('.search-bar-float');
     if (bar) {
       bar.querySelectorAll('.nav-btn').forEach(function(btn) {
-        btn.onclick = function() { navigateSearchHighlight(btn.dataset.dir, allMarks.length); };
+        btn.onclick = function() { navigateSearchHighlight(btn.dataset.dir); };
       });
     }
     setTimeout(function() {
