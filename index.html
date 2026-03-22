@@ -148,6 +148,12 @@
     font-size: 14px; padding: 5px 10px; border-radius: 12px;
     background: rgba(255,255,255,0.2); color: #fff; margin-left: 4px;
   }
+  .capsule-search-input {
+    background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px; color: #fff; font-size: 14px; padding: 4px 8px;
+    width: 80px; outline: none;
+  }
+  .capsule-search-input:focus { border-color: #4a90d9; background: rgba(255,255,255,0.25); }
   .search-highlight-current { outline: 2px solid #ff6600; }
 
   /* === 排序按鈕 === */
@@ -1501,7 +1507,7 @@ function highlightAndScrollToSearch() {
     window._searchHighlightIdx = startIdx;
     var bar = document.createElement('div');
     bar.className = 'search-bar-float';
-    var info = '<span>搜尋：' + query + '</span>';
+    var info = '<input class="capsule-search-input" type="text" value="' + query.replace(/"/g, '&quot;') + '" placeholder="搜尋...">';
     var nav = '<span style="display:flex;align-items:center;gap:4px;">';
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
     nav += '<span class="sh-counter">' + (occIdx + 1) + '/' + occTotal + '</span>';
@@ -1509,6 +1515,13 @@ function highlightAndScrollToSearch() {
     nav += '<button class="toggle-btn" title="清除標註">清除標註</button>';
     nav += '</span>';
     bar.innerHTML = info + nav;
+    bar.querySelector('.capsule-search-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        var newQuery = this.value.trim();
+        if (newQuery) reSearchInArticle(newQuery);
+      }
+    });
     bar.querySelector('.toggle-btn').addEventListener('click', function() {
       toggleSearchHighlights(this);
     });
@@ -1544,6 +1557,69 @@ function navigateSearchHighlight(dir, occTotal) {
   var counter = document.querySelector('.sh-counter');
   var total = occTotal || marks.length;
   if (counter) counter.textContent = (idx + 1) + '/' + total;
+}
+
+function reSearchInArticle(query) {
+  var reader = document.querySelector('.reader');
+  if (!reader) return;
+  // Remove old highlights
+  var oldMarks = reader.querySelectorAll('mark.search-highlight');
+  oldMarks.forEach(function(mark) {
+    var parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parent.normalize();
+  });
+  // Re-highlight with new query
+  var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
+  var node;
+  var nodesToReplace = [];
+  while (node = walker.nextNode()) {
+    if (node.textContent.indexOf(query) !== -1) {
+      nodesToReplace.push(node);
+    }
+  }
+  var firstMark = null;
+  nodesToReplace.forEach(function(node) {
+    var text = node.textContent;
+    var parent = node.parentNode;
+    var frag = document.createDocumentFragment();
+    var pos = 0;
+    var idx;
+    while ((idx = text.indexOf(query, pos)) !== -1) {
+      if (idx > pos) frag.appendChild(document.createTextNode(text.substring(pos, idx)));
+      var mark = document.createElement('mark');
+      mark.textContent = query;
+      mark.className = 'search-highlight';
+      frag.appendChild(mark);
+      if (!firstMark) firstMark = mark;
+      pos = idx + query.length;
+    }
+    if (pos < text.length) frag.appendChild(document.createTextNode(text.substring(pos)));
+    parent.replaceChild(frag, node);
+  });
+  // Update capsule counter
+  var allMarks = reader.querySelectorAll('mark.search-highlight');
+  var counter = document.querySelector('.sh-counter');
+  if (allMarks.length > 0) {
+    window._searchHighlightIdx = 0;
+    allMarks[0].classList.add('search-highlight-current');
+    if (counter) counter.textContent = '1/' + allMarks.length;
+    // Update nav buttons to use new total
+    var bar = document.querySelector('.search-bar-float');
+    if (bar) {
+      bar.querySelectorAll('.nav-btn').forEach(function(btn) {
+        btn.onclick = function() { navigateSearchHighlight(btn.dataset.dir, allMarks.length); };
+      });
+    }
+    setTimeout(function() {
+      allMarks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  } else {
+    if (counter) counter.textContent = '0/0';
+  }
+  // Update toggle button
+  var toggleBtn = document.querySelector('.toggle-btn');
+  if (toggleBtn) toggleBtn.textContent = '清除標註';
 }
 
 function toggleSearchHighlights(btn) {
