@@ -1507,7 +1507,7 @@ function highlightAndScrollToSearch() {
     window._searchHighlightIdx = startIdx;
     var bar = document.createElement('div');
     bar.className = 'search-bar-float';
-    var info = '<input class="capsule-search-input" type="text" value="' + query.replace(/"/g, '&quot;') + '" placeholder="搜尋...">';
+    var info = '<span style="margin-right:2px;">搜尋:</span><input class="capsule-search-input" type="text" value="' + query.replace(/"/g, '&quot;') + '" placeholder="搜尋...">';
     var nav = '<span style="display:flex;align-items:center;gap:4px;">';
     nav += '<button class="nav-btn" data-dir="prev" title="上一個">▲</button>';
     nav += '<span class="sh-counter">' + (occIdx + 1) + '/' + occTotal + '</span>';
