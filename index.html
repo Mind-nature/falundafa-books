@@ -1124,6 +1124,7 @@ function showPage(view) {
   document.getElementById('pageChapters').classList.toggle('active', view === 'chapters');
   document.getElementById('pageReader').classList.toggle('active', view === 'reader');
   document.getElementById('noticeBtn').style.display = (view === 'books') ? '' : 'none';
+  document.getElementById('manualBtn').style.display = (view === 'books') ? '' : 'none';
   document.getElementById('fontControls').style.display = (view === 'books') ? 'none' : '';
   if (!handlingPopstate) {
     history.pushState({ view: view }, '');
