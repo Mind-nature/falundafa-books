@@ -130,9 +130,10 @@
   body.dark .scope-filter-btn.active { color: #4a90d9; }
   .scope-tag {
     display: inline-block; padding: 2px 8px; margin: 2px 4px 2px 0; border-radius: 10px;
-    background: #e8f0fe; color: #1a73e8; font-size: 12px; cursor: pointer;
+    background: #e8f0fe; color: #1a73e8; font-size: 12px;
   }
-  .scope-tag:hover { background: #d2e3fc; }
+  .scope-tag-x { cursor: pointer; margin-left: 2px; opacity: 0.7; }
+  .scope-tag-x:hover { opacity: 1; }
   body.dark .scope-tag { background: #1e3a5f; color: #8ab4f8; }
   body.dark .scope-tag:hover { background: #264a6e; }
   #scopePanel input[type="checkbox"] {
@@ -1281,7 +1282,27 @@ function onSearchInput() {
 
 function toggleScopeDropdown() {
   var panel = document.getElementById('scopePanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  var overlay = document.getElementById('scopeOverlay');
+  var isOpen = panel.style.display !== 'none';
+  if (isOpen) {
+    panel.style.display = 'none';
+    if (overlay) overlay.style.display = 'none';
+  } else {
+    panel.style.display = 'block';
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'scopeOverlay';
+      overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:49;background:transparent;';
+      overlay.onclick = function(e) {
+        e.stopPropagation();
+        panel.style.display = 'none';
+        overlay.style.display = 'none';
+      };
+      document.body.appendChild(overlay);
+    } else {
+      overlay.style.display = 'block';
+    }
+  }
 }
 
 function toggleScopeAll(el) {
@@ -1309,7 +1330,7 @@ function updateScopeBtn() {
     var showArr = arr.slice(0, MAX_TAGS);
     showArr.forEach(function(cb) {
       var name = books[parseInt(cb.value)].name;
-      html += '<span class="scope-tag" onclick="removeScopeTag(' + cb.value + ')">' + name + ' ✕</span>';
+      html += '<span class="scope-tag">' + name + ' <span class="scope-tag-x" onclick="removeScopeTag(' + cb.value + ')">✕</span></span>';
     });
     if (arr.length > MAX_TAGS) {
       html += '<span class="scope-tag" onclick="expandScopeTags()" id="scopeMoreBtn">...還有 ' + (arr.length - MAX_TAGS) + ' 本</span>';
@@ -1327,7 +1348,7 @@ function expandScopeTags() {
   var html = '搜尋條件：';
   checked.forEach(function(cb) {
     var name = books[parseInt(cb.value)].name;
-    html += '<span class="scope-tag" onclick="removeScopeTag(' + cb.value + ')">' + name + ' ✕</span>';
+    html += '<span class="scope-tag">' + name + ' <span class="scope-tag-x" onclick="removeScopeTag(' + cb.value + ')">✕</span></span>';
   });
   tagsEl.innerHTML = html;
 }
@@ -1362,6 +1383,13 @@ async function doSearch(query) {
   var resultsEl = document.getElementById('searchResults');
   var bookListEl = document.getElementById('bookList');
   var footerEl = document.querySelector('#pageBooks > div:last-child');
+  // Save collapsed state before clearing DOM
+  if (!window._collapsedBooks) window._collapsedBooks = {};
+  var oldGroups = resultsEl.querySelectorAll('.search-group');
+  oldGroups.forEach(function(el) {
+    var bookIdx = el.getAttribute('data-book');
+    if (bookIdx) window._collapsedBooks[bookIdx] = el.classList.contains('collapsed');
+  });
   resultsEl.style.display = 'block';
   bookListEl.style.display = 'none';
   document.getElementById('clearProgressBtn').style.display = 'none';
@@ -1478,9 +1506,18 @@ function showSearchResultsPage() {
 
   var html = '<div class="search-status">共找到 ' + total + ' 個結果（' + groups.length + ' 本書）</div>';
 
+  // Save collapsed state before re-render
+  if (!window._collapsedBooks) window._collapsedBooks = {};
+  var oldGroups = document.querySelectorAll('.search-group');
+  oldGroups.forEach(function(el) {
+    var bookIdx = el.getAttribute('data-book');
+    if (bookIdx) window._collapsedBooks[bookIdx] = el.classList.contains('collapsed');
+  });
+
   for (var g = 0; g < pageGroups.length; g++) {
     var grp = pageGroups[g];
-    html += '<div class="search-group" id="sg-' + g + '">';
+    var isCollapsed = window._collapsedBooks[grp.bookIdx] ? ' collapsed' : '';
+    html += '<div class="search-group' + isCollapsed + '" id="sg-' + g + '" data-book="' + grp.bookIdx + '">';
     html += '<div class="search-group-header" onclick="toggleSearchGroup(' + g + ')">';
     html += '<span>▾ ' + grp.bookName + '</span>';
     html += '<span class="sg-count">' + grp.items.length + ' 個結果</span>';
