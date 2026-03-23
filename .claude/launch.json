@@ -4,8 +4,7 @@
     {
       "name": "falundafa-reader",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-c", "import http.server, os; http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler, port=int(os.environ['PORT']), bind='')"],
-      "cwd": "D:\\WORKCL\\falundafa_books",
+      "runtimeArgs": ["D:/WORKCL/falundafa_books/serve.py"],
       "autoPort": true
     }
   ]
