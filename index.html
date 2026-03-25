@@ -1061,10 +1061,13 @@ function showPage(view) {
 }
 
 function saveNavState() {
+  var scrollY = window.scrollY || window.pageYOffset || 0;
   var state = {
     view: currentView,
     bookIdx: currentBookIdx,
-    chapterIdx: currentChapterIdx
+    chapterIdx: currentChapterIdx,
+    scrollY: scrollY,
+    searchQuery: document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : ''
   };
   localStorage.setItem('navState', JSON.stringify(state));
 }
@@ -1074,17 +1077,39 @@ function restoreNavState() {
   if (!raw) return;
   try {
     var state = JSON.parse(raw);
+
+    // 恢復搜尋頁面
+    if (state.view === 'books' && state.searchQuery) {
+      document.getElementById('searchInput').value = state.searchQuery;
+      // 觸發搜尋，延遲恢復滾動位置
+      onSearchInput();
+      if (state.scrollY) {
+        setTimeout(function() { window.scrollTo(0, state.scrollY); }, 500);
+      }
+      return;
+    }
+
     if (state.view === 'books' || !state.view) return;
     if (state.bookIdx < 0 || state.bookIdx >= books.length) return;
+
+    var restoreScroll = state.scrollY || 0;
+
     if (state.view === 'chapters') {
       openBook(state.bookIdx);
+      if (restoreScroll) {
+        setTimeout(function() { window.scrollTo(0, restoreScroll); }, 100);
+      }
     } else if (state.view === 'reader') {
+      // 設定 savedScrollReader 讓 restoreReaderScroll 使用
+      if (restoreScroll) {
+        var scrollKey = state.bookIdx + '_' + state.chapterIdx;
+        savedScrollReader[scrollKey] = restoreScroll;
+      }
       openBook(state.bookIdx);
       var book = books[state.bookIdx];
       if (book.type === 'single') return; // openBook already opens reader
       var hongYinBooks = [15, 26, 39, 45, 46, 51];
       if (hongYinBooks.indexOf(book.id) !== -1) {
-        // openBook already called openChapter(0), navigate to correct chapter
         if (state.chapterIdx > 0 && state.chapterIdx < book.chapters.length) {
           openChapter(state.chapterIdx);
         }
@@ -1094,6 +1119,11 @@ function restoreNavState() {
     }
   } catch(e) {}
 }
+
+// 重新整理前儲存狀態（含滾動位置）
+window.addEventListener('beforeunload', function() {
+  saveNavState();
+});
 
 window.addEventListener('popstate', function(e) {
   if (currentView === 'books') {
