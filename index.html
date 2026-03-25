@@ -1623,6 +1623,20 @@ function renderXjwChapters(book) {
     document.querySelector('.theme-btn').textContent = '☀';
   }
 
+  // 在渲染前預先隱藏書籍列表（避免搜尋頁面閃一下首頁）
+  var _savedNav = localStorage.getItem('navState');
+  if (_savedNav) {
+    try {
+      var _s = JSON.parse(_savedNav);
+      if (_s.searchQuery) {
+        document.getElementById('bookList').style.display = 'none';
+        document.getElementById('clearProgressBtn').style.display = 'none';
+        document.querySelector('#pageBooks > div:last-child').style.display = 'none';
+        document.getElementById('searchResults').style.display = 'block';
+      }
+    } catch(e) {}
+  }
+
   renderBooks();
   restoreNavState();
   document.getElementById('fontControls').style.display = 'none';
