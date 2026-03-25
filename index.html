@@ -1154,6 +1154,43 @@ function showPage(view) {
   if (!handlingPopstate) {
     history.pushState({ view: view }, '');
   }
+  // 儲存導航狀態，重新整理時可恢復
+  saveNavState();
+}
+
+function saveNavState() {
+  var state = {
+    view: currentView,
+    bookIdx: currentBookIdx,
+    chapterIdx: currentChapterIdx
+  };
+  localStorage.setItem('navState', JSON.stringify(state));
+}
+
+function restoreNavState() {
+  var raw = localStorage.getItem('navState');
+  if (!raw) return;
+  try {
+    var state = JSON.parse(raw);
+    if (state.view === 'books' || !state.view) return;
+    if (state.bookIdx < 0 || state.bookIdx >= books.length) return;
+    if (state.view === 'chapters') {
+      openBook(state.bookIdx);
+    } else if (state.view === 'reader') {
+      openBook(state.bookIdx);
+      var book = books[state.bookIdx];
+      if (book.type === 'single') return; // openBook already opens reader
+      var hongYinBooks = [15, 26, 39, 45, 46, 51];
+      if (hongYinBooks.indexOf(book.id) !== -1) {
+        // openBook already called openChapter(0), navigate to correct chapter
+        if (state.chapterIdx > 0 && state.chapterIdx < book.chapters.length) {
+          openChapter(state.chapterIdx);
+        }
+      } else if (state.chapterIdx >= 0 && state.chapterIdx < book.chapters.length) {
+        openChapter(state.chapterIdx);
+      }
+    }
+  } catch(e) {}
 }
 
 window.addEventListener('popstate', function(e) {
@@ -1954,6 +1991,7 @@ function renderXjwChapters(book) {
   }
 
   renderBooks();
+  restoreNavState();
   document.getElementById('fontControls').style.display = 'none';
 
   // 滑到底部標記閱讀完成
