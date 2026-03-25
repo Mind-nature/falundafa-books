@@ -459,6 +459,9 @@
   <div id="searchResults" style="padding:0 8px;display:none;"></div>
   <div class="book-list" id="bookList"></div>
   <button class="clear-progress-btn" id="clearProgressBtn" onclick="clearAllProgress()">清除所有已讀標記</button>
+  <div id="visitorCounter" style="text-align:center;padding:16px;font-size:14px;color:#999;">
+    瀏覽人次：<span id="visitorCount">載入中...</span>
+  </div>
   <div style="padding:20px 16px;font-size:16px;color:#666;line-height:2;">
     此網站是由大法弟子在法輪大法官網擷取的，並且優化成手機可觀看的模式，方便同修們觀看。<br>
     資料來源：<br>
@@ -1988,6 +1991,25 @@ function renderXjwChapters(book) {
       localStorage.setItem('book_' + book.id + '_completed', '1');
     }
   });
+})();
+
+// === 瀏覽人次計數器 ===
+(function() {
+  // ★ 部署 Cloudflare Worker 後，將 Worker URL 填入這裡
+  var VISITOR_COUNTER_API = 'https://visitordata.magicheartseven.workers.dev';
+
+  if (!VISITOR_COUNTER_API) return;
+
+  fetch(VISITOR_COUNTER_API)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.count !== undefined) {
+        document.getElementById('visitorCount').textContent = data.count.toLocaleString();
+      }
+    })
+    .catch(function() {
+      document.getElementById('visitorCount').textContent = '-';
+    });
 })();
 </script>
 
