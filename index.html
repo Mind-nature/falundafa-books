@@ -1048,13 +1048,13 @@ var handlingPopstate = false;
 
 function showPage(view) {
   currentView = view;
-  // 清除預先隱藏的 inline style
-  document.getElementById('pageBooks').style.display = '';
-  document.getElementById('pageChapters').style.display = '';
-  document.getElementById('pageReader').style.display = '';
+  // 先切換 class（決定誰顯示），再清除 inline style（避免閃一下）
   document.getElementById('pageBooks').classList.toggle('active', view === 'books');
   document.getElementById('pageChapters').classList.toggle('active', view === 'chapters');
   document.getElementById('pageReader').classList.toggle('active', view === 'reader');
+  document.getElementById('pageBooks').style.display = '';
+  document.getElementById('pageChapters').style.display = '';
+  document.getElementById('pageReader').style.display = '';
   document.getElementById('noticeBtn').style.display = (view === 'books') ? '' : 'none';
   document.getElementById('fontControls').style.display = (view === 'books') ? 'none' : '';
   if (!handlingPopstate) {
