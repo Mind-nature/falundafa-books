@@ -497,7 +497,7 @@ function clearAllProgress() {
 // ============================================================
 // 打開書籍
 // ============================================================
-function openBook(idx, skipUrlUpdate) {
+function openBook(idx, skipUrlUpdate, targetChapter) {
   savedScrollBooks = window.scrollY || window.pageYOffset || 0;
   currentBookIdx = idx;
   const book = books[idx];
@@ -528,7 +528,8 @@ function openBook(idx, skipUrlUpdate) {
   // 洪吟系列：跳過章節列表，直接進入閱讀器
   var hongYinBooks = [15, 26, 39, 45, 46, 51];
   if (hongYinBooks.indexOf(book.id) !== -1) {
-    openChapter(0);
+    var startCh = (targetChapter >= 0 && targetChapter < book.chapters.length) ? targetChapter : 0;
+    openChapter(startCh);
     document.getElementById('navTitle').textContent = book.name;
     return;
   }
@@ -1683,13 +1684,14 @@ function renderXjwChapters(book) {
     var bookIdx = books.findIndex(function(b) { return b.id === bookId; });
     if (bookIdx >= 0) {
       var chMatch = location.search.match(/[?&]ch=(\d+)/);
-      openBook(bookIdx, !!chMatch);  // 有 ch 時跳過 URL 更新
-      // 支援 ?book=7&ch=2 直接打開章節
-      if (chMatch) {
-        var chNum = parseInt(chMatch[1], 10);
+      var chIdx = chMatch ? parseInt(chMatch[1], 10) - 1 : -1;
+      openBook(bookIdx, chIdx >= 0, chIdx);  // 傳入目標章節
+      // 非洪吟系列：額外呼叫 openChapter
+      if (chIdx >= 0) {
         var book = books[bookIdx];
-        if (book.chapters && chNum >= 1 && chNum <= book.chapters.length) {
-          openChapter(chNum - 1);
+        var hongYinBooks = [15, 26, 39, 45, 46, 51];
+        if (hongYinBooks.indexOf(book.id) === -1 && book.chapters && chIdx < book.chapters.length) {
+          openChapter(chIdx);
         }
       }
     }
