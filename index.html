@@ -593,14 +593,14 @@ function clearAllProgress() {
 // ============================================================
 // 打開書籍
 // ============================================================
-function openBook(idx) {
+function openBook(idx, skipUrlUpdate) {
   savedScrollBooks = window.scrollY || window.pageYOffset || 0;
   currentBookIdx = idx;
   const book = books[idx];
 
   document.getElementById('navTitle').textContent = book.name;
   document.getElementById('backBtn').classList.add('show');
-  updateUrl();
+  if (!skipUrlUpdate) updateUrl();
 
   if (book.type === 'single') {
     // 單頁書籍，直接進入閱讀
@@ -2083,9 +2083,9 @@ function renderXjwChapters(book) {
     var bookId = parseInt(routeBookId, 10);
     var bookIdx = books.findIndex(function(b) { return b.id === bookId; });
     if (bookIdx >= 0) {
-      openBook(bookIdx);
-      // 支援 ?book=7&ch=2 直接打開章節
       var chMatch = location.search.match(/[?&]ch=(\d+)/);
+      openBook(bookIdx, !!chMatch);  // 有 ch 時跳過 URL 更新
+      // 支援 ?book=7&ch=2 直接打開章節
       if (chMatch) {
         var chNum = parseInt(chMatch[1], 10);
         var book = books[bookIdx];
