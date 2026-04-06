@@ -600,6 +600,7 @@ function openBook(idx) {
 
   document.getElementById('navTitle').textContent = book.name;
   document.getElementById('backBtn').classList.add('show');
+  updateUrl();
 
   if (book.type === 'single') {
     // 單頁書籍，直接進入閱讀
@@ -854,6 +855,7 @@ function openChapter(idx) {
 
   loadContent(chapter.file);
   showPage('reader');
+  updateUrl();
 
   // 預載入前後頁的內容和圖片（僅 http 模式）
   if (!isFileProtocol) {
@@ -1248,8 +1250,20 @@ function clearUrlParams() {
   }
 }
 
+function updateUrl() {
+  if (currentBookIdx < 0) {
+    clearUrlParams();
+    return;
+  }
+  var book = books[currentBookIdx];
+  var params = '?book=' + book.id;
+  if (currentView === 'reader' && book.type !== 'single' && currentChapterIdx >= 0) {
+    params += '&ch=' + (currentChapterIdx + 1);
+  }
+  history.replaceState(null, '', location.pathname + params);
+}
+
 function goBack() {
-  clearUrlParams();
   document.getElementById('pageNav').classList.remove('show');
   clearSearchHighlights();
   if (currentView === 'reader') {
@@ -1261,6 +1275,7 @@ function goBack() {
       cameFromSearch = false;
       document.getElementById('navTitle').textContent = '法輪大法書籍';
       document.getElementById('backBtn').classList.remove('show');
+      clearUrlParams();
       showPage('books');
       // 顯示搜尋結果，隱藏書籍列表
       document.getElementById('searchResults').style.display = 'block';
@@ -1276,6 +1291,7 @@ function goBack() {
       // 單頁書籍，返回書籍列表
       document.getElementById('navTitle').textContent = '法輪大法書籍';
       document.getElementById('backBtn').classList.remove('show');
+      clearUrlParams();
       showPage('books');
       renderBooks();
       setTimeout(function() { window.scrollTo(0, savedScrollBooks); }, 0);
@@ -1285,18 +1301,21 @@ function goBack() {
       if (hongYinBooks.indexOf(book.id) !== -1) {
         document.getElementById('navTitle').textContent = '法輪大法書籍';
         document.getElementById('backBtn').classList.remove('show');
+        clearUrlParams();
         showPage('books');
         renderBooks();
         setTimeout(function() { window.scrollTo(0, savedScrollBooks); }, 0);
       } else {
         document.getElementById('navTitle').textContent = book.name;
         showPage('chapters');
+        updateUrl();
         setTimeout(function() { window.scrollTo(0, savedScrollChapters); }, 0);
       }
     }
   } else if (currentView === 'chapters') {
     document.getElementById('navTitle').textContent = '法輪大法書籍';
     document.getElementById('backBtn').classList.remove('show');
+    clearUrlParams();
     clearSearch();
     showPage('books');
     renderBooks();
@@ -2065,6 +2084,15 @@ function renderXjwChapters(book) {
     var bookIdx = books.findIndex(function(b) { return b.id === bookId; });
     if (bookIdx >= 0) {
       openBook(bookIdx);
+      // 支援 ?book=7&ch=2 直接打開章節
+      var chMatch = location.search.match(/[?&]ch=(\d+)/);
+      if (chMatch) {
+        var chNum = parseInt(chMatch[1], 10);
+        var book = books[bookIdx];
+        if (book.chapters && chNum >= 1 && chNum <= book.chapters.length) {
+          openChapter(chNum - 1);
+        }
+      }
     }
   } else {
     restoreNavState();
