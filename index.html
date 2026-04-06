@@ -1144,7 +1144,14 @@ window.addEventListener('popstate', function(e) {
   handlingPopstate = false;
 });
 
+function clearUrlParams() {
+  if (location.search || location.hash) {
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
 function goBack() {
+  clearUrlParams();
   document.getElementById('pageNav').classList.remove('show');
   if (currentView === 'reader') {
     // 記住閱讀器滾動位置
