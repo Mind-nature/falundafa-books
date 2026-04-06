@@ -1242,7 +1242,14 @@ window.addEventListener('popstate', function(e) {
   handlingPopstate = false;
 });
 
+function clearUrlParams() {
+  if (location.search || location.hash) {
+    history.replaceState(null, '', location.pathname);
+  }
+}
+
 function goBack() {
+  clearUrlParams();
   document.getElementById('pageNav').classList.remove('show');
   clearSearchHighlights();
   if (currentView === 'reader') {
@@ -2029,7 +2036,7 @@ function renderXjwChapters(book) {
   }
 
   // 在渲染前預先隱藏書籍列表（避免閃一下首頁）
-  var _hasHashRoute = location.hash.match(/^#book\/(\d+)$/);
+  var _hasHashRoute = location.hash.match(/^#book\/(\d+)$/) || location.search.match(/[?&]book=(\d+)/);
   var _savedNav = localStorage.getItem('navState');
   if (_hasHashRoute) {
     document.getElementById('pageBooks').style.display = 'none';
@@ -2049,10 +2056,12 @@ function renderXjwChapters(book) {
 
   renderBooks();
 
-  // URL hash 路由：支援 #book/7 直接打開指定書籍
+  // URL 路由：支援 ?book=7 或 #book/7 直接打開指定書籍
   var hashMatch = location.hash.match(/^#book\/(\d+)$/);
-  if (hashMatch) {
-    var bookId = parseInt(hashMatch[1], 10);
+  var queryMatch = location.search.match(/[?&]book=(\d+)/);
+  var routeBookId = hashMatch ? hashMatch[1] : (queryMatch ? queryMatch[1] : null);
+  if (routeBookId) {
+    var bookId = parseInt(routeBookId, 10);
     var bookIdx = books.findIndex(function(b) { return b.id === bookId; });
     if (bookIdx >= 0) {
       openBook(bookIdx);
