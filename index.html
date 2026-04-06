@@ -2039,7 +2039,18 @@ function renderXjwChapters(book) {
   }
 
   renderBooks();
-  restoreNavState();
+
+  // URL hash 路由：支援 #book/7 直接打開指定書籍
+  var hashMatch = location.hash.match(/^#book\/(\d+)$/);
+  if (hashMatch) {
+    var bookId = parseInt(hashMatch[1], 10);
+    var bookIdx = books.findIndex(function(b) { return b.id === bookId; });
+    if (bookIdx >= 0) {
+      openBook(bookIdx);
+    }
+  } else {
+    restoreNavState();
+  }
   document.getElementById('fontControls').style.display = 'none';
 
   // 滑到底部標記閱讀完成
