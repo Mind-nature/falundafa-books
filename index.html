@@ -1146,6 +1146,10 @@ var handlingPopstate = false;
 
 function showPage(view) {
   currentView = view;
+  // 清除預先隱藏的 inline style
+  document.getElementById('pageBooks').style.display = '';
+  document.getElementById('pageChapters').style.display = '';
+  document.getElementById('pageReader').style.display = '';
   document.getElementById('pageBooks').classList.toggle('active', view === 'books');
   document.getElementById('pageChapters').classList.toggle('active', view === 'chapters');
   document.getElementById('pageReader').classList.toggle('active', view === 'reader');
@@ -2024,9 +2028,12 @@ function renderXjwChapters(book) {
     document.querySelector('.theme-btn').textContent = '☀';
   }
 
-  // 在渲染前預先隱藏書籍列表（避免搜尋頁面閃一下首頁）
+  // 在渲染前預先隱藏書籍列表（避免閃一下首頁）
+  var _hasHashRoute = location.hash.match(/^#book\/(\d+)$/);
   var _savedNav = localStorage.getItem('navState');
-  if (_savedNav) {
+  if (_hasHashRoute) {
+    document.getElementById('pageBooks').style.display = 'none';
+  } else if (_savedNav) {
     try {
       var _s = JSON.parse(_savedNav);
       if (_s.searchQuery) {
@@ -2034,6 +2041,8 @@ function renderXjwChapters(book) {
         document.getElementById('clearProgressBtn').style.display = 'none';
         document.querySelector('#pageBooks > div:last-child').style.display = 'none';
         document.getElementById('searchResults').style.display = 'block';
+      } else if (_s.view && _s.view !== 'books') {
+        document.getElementById('pageBooks').style.display = 'none';
       }
     } catch(e) {}
   }
