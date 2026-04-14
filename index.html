@@ -1163,6 +1163,27 @@ function showPage(view) {
   }
   // 儲存導航狀態，重新整理時可恢復
   saveNavState();
+  // 更新瀏覽器分頁標題
+  updatePageTitle();
+}
+
+function updatePageTitle() {
+  var base = '法輪大法書籍';
+  if (currentBookIdx < 0 || currentView === 'books') {
+    document.title = base;
+    return;
+  }
+  var book = books[currentBookIdx];
+  if (currentView === 'chapters') {
+    document.title = book.name + ' - ' + base;
+  } else if (currentView === 'reader') {
+    if (book.type === 'single') {
+      document.title = book.name + ' - ' + base;
+    } else if (book.chapters && currentChapterIdx >= 0) {
+      var chapter = book.chapters[currentChapterIdx];
+      document.title = chapter.name + ' - ' + book.name;
+    }
+  }
 }
 
 function saveNavState() {
