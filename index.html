@@ -1408,7 +1408,7 @@ var SEARCH_PAGE_SIZE = 30;
 function loadSearchIndex() {
   if (searchIndex || searchIndexLoading) return;
   searchIndexLoading = true;
-  fetch('search-index.json?v=5')
+  fetch('search-index.json?v=6')
     .then(function(r) { return r.json(); })
     .then(function(data) {
       searchIndex = data;
@@ -1567,19 +1567,43 @@ async function doSearch(query) {
     checkedScopes.forEach(function(cb) { scopeSet[parseInt(cb.value)] = true; });
   }
   var allFiles = [];
+  var hyIds = [15, 26, 39, 45, 46, 51]; // 洪吟系列 book IDs
   for (var bi = 0; bi < books.length; bi++) {
     if (!scopeAll && !scopeSet[bi]) continue;
     var bk = books[bi];
-    if ([39, 45, 46, 51].indexOf(bk.id) !== -1) continue; // skip 洪吟三～六 (image only)
+    // 洪吟五六待補 OCR
+    if ([46, 51].indexOf(bk.id) !== -1) continue;
     if (bk.type === 'single') {
       allFiles.push({ bookIdx: bi, bookName: bk.name, name: bk.name, file: bk.file, chIdx: 0 });
     } else if (bk.chapters) {
+      var isHY = hyIds.indexOf(bk.id) !== -1;
       for (var ci = 0; ci < bk.chapters.length; ci++) {
         var ch = bk.chapters[ci];
         var chName = ch.name;
-        // 洪吟系列：從搜尋索引取詩名（第一行）
-        if ([15, 26].indexOf(bk.id) !== -1 && searchIndex && searchIndex[ch.file]) {
+        if (isHY && searchIndex && searchIndex[ch.file]) {
           chName = searchIndex[ch.file].split('\n')[0] || ch.name;
+          // 洪吟系列：合併同名跨頁詩（跳過後續同名頁）
+          if (ci > 0) {
+            var prevCh = bk.chapters[ci - 1];
+            var prevName = (searchIndex[prevCh.file] || '').split('\n')[0];
+            if (prevName === chName) continue; // skip, already merged into previous
+          }
+          // Check if next pages have the same title, merge text
+          var mergedText = searchIndex[ch.file] || '';
+          for (var ni = ci + 1; ni < bk.chapters.length; ni++) {
+            var nextFile = bk.chapters[ni].file;
+            var nextTitle = (searchIndex[nextFile] || '').split('\n')[0];
+            if (nextTitle === chName) {
+              // Append text after title from next page
+              var nextLines = (searchIndex[nextFile] || '').split('\n');
+              nextLines.shift(); // remove duplicate title
+              mergedText += '\n' + nextLines.join('\n');
+            } else {
+              break;
+            }
+          }
+          allFiles.push({ bookIdx: bi, bookName: bk.name, name: chName, file: ch.file, chIdx: ci, mergedText: mergedText });
+          continue;
         }
         allFiles.push({ bookIdx: bi, bookName: bk.name, name: chName, file: ch.file, chIdx: ci });
       }
@@ -1592,7 +1616,7 @@ async function doSearch(query) {
   if (searchIndex) {
     for (var i = 0; i < allFiles.length; i++) {
       var f = allFiles[i];
-      var text = searchIndex[f.file] || '';
+      var text = f.mergedText || searchIndex[f.file] || '';
       findAllMatches(text, query, f, searchAllResults);
     }
   } else {
@@ -1621,6 +1645,22 @@ async function doSearch(query) {
 }
 
 function findAllMatches(text, query, fileInfo, results) {
+  // 洪吟系列：顯示詩詞全文（一首詩只出一筆結果）
+  var hongyin = [15, 26, 39, 45, 46, 51];
+  var bk = books[fileInfo.bookIdx];
+  if (bk && hongyin.indexOf(bk.id) !== -1) {
+    if (text.indexOf(query) === -1) return;
+    // Highlight all occurrences in full text, replace \n with <br>
+    var escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var qEscaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    var fullHtml = text.replace(new RegExp(qEscaped, 'g'), '<mark>' + query + '</mark>');
+    fullHtml = fullHtml.replace(/\n/g, '<br>');
+    results.push({
+      bookIdx: fileInfo.bookIdx, bookName: fileInfo.bookName,
+      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: fullHtml
+    });
+    return;
+  }
   var startPos = 0;
   while (true) {
     var idx = text.indexOf(query, startPos);
@@ -2162,7 +2202,7 @@ function renderXjwChapters(book) {
 // === 瀏覽人次計數器 ===
 (function() {
   // ★ 部署 Cloudflare Worker 後，將 Worker URL 填入這裡
-  var VISITOR_COUNTER_API = 'https://visitordata.magicheartseven.workers.dev';
+  var VISITOR_COUNTER_API = 'https://visitordata.mindcard.workers.dev';
 
   if (!VISITOR_COUNTER_API) return;
 
