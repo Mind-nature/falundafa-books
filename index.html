@@ -2233,7 +2233,7 @@ function renderXjwChapters(book) {
   } else {
     restoreNavState();
   }
-  document.getElementById('fontControls').style.display = 'none';
+  document.getElementById('fontControls').style.display = (currentView === 'books') ? 'none' : '';
 
   // 滑到底部標記閱讀完成
   var hongYinBooks = [15, 26, 39, 45, 46, 51];
