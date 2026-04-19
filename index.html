@@ -587,6 +587,8 @@ function clearAllProgress() {
     localStorage.removeItem('book_' + b.id + '_completed');
   });
   savedScrollReader = {};
+  savedScrollChapters = {};
+  persistScroll();
   renderBooks();
 }
 
@@ -595,6 +597,7 @@ function clearAllProgress() {
 // ============================================================
 function openBook(idx, skipUrlUpdate, targetChapter) {
   savedScrollBooks = window.scrollY || window.pageYOffset || 0;
+  persistScroll();
   currentBookIdx = idx;
   const book = books[idx];
 
@@ -818,7 +821,8 @@ function openChapterSection(idx, anchor) {
 // 打開章節
 // ============================================================
 function openChapter(idx) {
-  savedScrollChapters = window.scrollY || window.pageYOffset || 0;
+  savedScrollChapters[currentBookIdx] = window.scrollY || window.pageYOffset || 0;
+  persistScroll();
   currentChapterIdx = idx;
   const book = books[currentBookIdx];
   const chapter = book.chapters[idx];
@@ -1122,10 +1126,12 @@ function extractContent(html, filePath) {
 
 function prevChapter() {
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
+  persistScroll();
   if (currentChapterIdx > 0) openChapter(currentChapterIdx - 1);
 }
 function nextChapter() {
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
+  persistScroll();
   const book = books[currentBookIdx];
   if (currentChapterIdx < book.chapters.length - 1) openChapter(currentChapterIdx + 1);
 }
@@ -1135,15 +1141,32 @@ function goToPage(val) {
   var book = books[currentBookIdx];
   if (!num || num < 1 || num > book.chapters.length) return;
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
+  persistScroll();
   openChapter(num - 1);
 }
 
 // ============================================================
 // 頁面切換
 // ============================================================
-var savedScrollBooks = 0;
-var savedScrollChapters = 0;
-var savedScrollReader = {}; // key: "bookIdx_chapterIdx"
+var savedScrollBooks = parseInt(localStorage.getItem('ss_books') || '0', 10);
+var savedScrollChapters = {};  // key: bookIdx → scrollY
+var savedScrollReader = {}; // key: "bookIdx_chapterIdx" → scrollY
+
+// 從 localStorage 恢復所有滾動位置
+try {
+  var _ssc = JSON.parse(localStorage.getItem('ss_chapters') || '{}');
+  savedScrollChapters = _ssc;
+} catch(e) {}
+try {
+  var _ssr = JSON.parse(localStorage.getItem('ss_reader') || '{}');
+  savedScrollReader = _ssr;
+} catch(e) {}
+
+function persistScroll() {
+  localStorage.setItem('ss_books', savedScrollBooks.toString());
+  localStorage.setItem('ss_chapters', JSON.stringify(savedScrollChapters));
+  localStorage.setItem('ss_reader', JSON.stringify(savedScrollReader));
+}
 
 var handlingPopstate = false;
 
@@ -1264,14 +1287,23 @@ window.addEventListener('beforeunload', function() {
 window.addEventListener('pagehide', function() {
   saveNavState();
 });
-// 滾動時即時儲存（throttled，100ms 一次）
+// 滾動時即時儲存（throttled，200ms 一次）
 var _scrollSaveTimer = null;
 window.addEventListener('scroll', function() {
   if (_scrollSaveTimer) return;
   _scrollSaveTimer = setTimeout(function() {
+    var y = window.scrollY || window.pageYOffset || 0;
+    if (currentView === 'books') {
+      savedScrollBooks = y;
+    } else if (currentView === 'chapters') {
+      savedScrollChapters[currentBookIdx] = y;
+    } else if (currentView === 'reader') {
+      savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = y;
+    }
+    persistScroll();
     saveNavState();
     _scrollSaveTimer = null;
-  }, 100);
+  }, 200);
 }, { passive: true });
 
 window.addEventListener('popstate', function(e) {
@@ -1310,6 +1342,7 @@ function goBack() {
   if (currentView === 'reader') {
     // 記住閱讀器滾動位置
     savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
+    persistScroll();
 
     // 從搜尋結果進入的，返回搜尋頁面
     if (cameFromSearch && searchAllResults.length > 0) {
@@ -1350,7 +1383,8 @@ function goBack() {
         document.getElementById('navTitle').textContent = book.name;
         showPage('chapters');
         updateUrl();
-        setTimeout(function() { window.scrollTo(0, savedScrollChapters); }, 0);
+        var _chScroll = savedScrollChapters[currentBookIdx] || 0;
+        setTimeout(function() { window.scrollTo(0, _chScroll); }, 0);
       }
     }
   } else if (currentView === 'chapters') {
@@ -2167,17 +2201,8 @@ function renderXjwChapters(book) {
       var chMatch = location.search.match(/[?&]ch=(\d+)/);
       var chIdx = chMatch ? parseInt(chMatch[1], 10) - 1 : -1;
 
-      // 嘗試從 navState 讀取上次的滾動位置（URL 相符才使用）
-      try {
-        var _ns = JSON.parse(localStorage.getItem('navState') || '{}');
-        if (_ns.bookIdx === bookIdx && _ns.chapterIdx === chIdx && _ns.scrollY) {
-          if (chIdx >= 0) {
-            savedScrollReader[bookIdx + '_' + chIdx] = _ns.scrollY;
-          }
-        }
-      } catch(e) {}
-
-      openBook(bookIdx, chIdx >= 0, chIdx);  // 傳入目標章節
+      // savedScrollReader 和 savedScrollChapters 已從 localStorage 恢復
+      openBook(bookIdx, chIdx >= 0, chIdx);
       // 非洪吟系列：額外呼叫 openChapter
       if (chIdx >= 0) {
         var book = books[bookIdx];
@@ -2186,13 +2211,11 @@ function renderXjwChapters(book) {
           openChapter(chIdx);
         }
       } else {
-        // 沒有 ch 時，是 chapters 頁面，恢復章節列表的滾動位置
-        try {
-          var _ns2 = JSON.parse(localStorage.getItem('navState') || '{}');
-          if (_ns2.bookIdx === bookIdx && _ns2.view === 'chapters' && _ns2.scrollY) {
-            setTimeout(function() { window.scrollTo(0, _ns2.scrollY); }, 100);
-          }
-        } catch(e) {}
+        // 章節列表：恢復該書的滾動位置
+        var _chScroll = savedScrollChapters[bookIdx] || 0;
+        if (_chScroll) {
+          setTimeout(function() { window.scrollTo(0, _chScroll); }, 100);
+        }
       }
     }
   } else {
