@@ -2147,6 +2147,17 @@ function renderXjwChapters(book) {
     if (bookIdx >= 0) {
       var chMatch = location.search.match(/[?&]ch=(\d+)/);
       var chIdx = chMatch ? parseInt(chMatch[1], 10) - 1 : -1;
+
+      // 嘗試從 navState 讀取上次的滾動位置（URL 相符才使用）
+      try {
+        var _ns = JSON.parse(localStorage.getItem('navState') || '{}');
+        if (_ns.bookIdx === bookIdx && _ns.chapterIdx === chIdx && _ns.scrollY) {
+          if (chIdx >= 0) {
+            savedScrollReader[bookIdx + '_' + chIdx] = _ns.scrollY;
+          }
+        }
+      } catch(e) {}
+
       openBook(bookIdx, chIdx >= 0, chIdx);  // 傳入目標章節
       // 非洪吟系列：額外呼叫 openChapter
       if (chIdx >= 0) {
@@ -2155,6 +2166,14 @@ function renderXjwChapters(book) {
         if (hongYinBooks.indexOf(book.id) === -1 && book.chapters && chIdx < book.chapters.length) {
           openChapter(chIdx);
         }
+      } else {
+        // 沒有 ch 時，是 chapters 頁面，恢復章節列表的滾動位置
+        try {
+          var _ns2 = JSON.parse(localStorage.getItem('navState') || '{}');
+          if (_ns2.bookIdx === bookIdx && _ns2.view === 'chapters' && _ns2.scrollY) {
+            setTimeout(function() { window.scrollTo(0, _ns2.scrollY); }, 100);
+          }
+        } catch(e) {}
       }
     }
   } else {
