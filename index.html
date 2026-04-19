@@ -1219,7 +1219,13 @@ function restoreNavState() {
       return;
     }
 
-    if (state.view === 'books' || !state.view) return;
+    // 首頁：恢復滾動位置
+    if (state.view === 'books' || !state.view) {
+      if (state.scrollY) {
+        setTimeout(function() { window.scrollTo(0, state.scrollY); }, 0);
+      }
+      return;
+    }
     if (state.bookIdx < 0 || state.bookIdx >= books.length) return;
 
     var restoreScroll = state.scrollY || 0;
@@ -1254,6 +1260,19 @@ function restoreNavState() {
 window.addEventListener('beforeunload', function() {
   saveNavState();
 });
+// pagehide 比 beforeunload 在手機上更可靠
+window.addEventListener('pagehide', function() {
+  saveNavState();
+});
+// 滾動時即時儲存（throttled，100ms 一次）
+var _scrollSaveTimer = null;
+window.addEventListener('scroll', function() {
+  if (_scrollSaveTimer) return;
+  _scrollSaveTimer = setTimeout(function() {
+    saveNavState();
+    _scrollSaveTimer = null;
+  }, 100);
+}, { passive: true });
 
 window.addEventListener('popstate', function(e) {
   if (currentView === 'books') {
