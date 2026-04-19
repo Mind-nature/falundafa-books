@@ -596,6 +596,7 @@ function clearAllProgress() {
 // 打開書籍
 // ============================================================
 function openBook(idx, skipUrlUpdate, targetChapter) {
+  cancelScrollSave();
   savedScrollBooks = window.scrollY || window.pageYOffset || 0;
   persistScroll();
   currentBookIdx = idx;
@@ -821,6 +822,7 @@ function openChapterSection(idx, anchor) {
 // 打開章節
 // ============================================================
 function openChapter(idx) {
+  cancelScrollSave();
   savedScrollChapters[currentBookIdx] = window.scrollY || window.pageYOffset || 0;
   persistScroll();
   currentChapterIdx = idx;
@@ -1125,11 +1127,13 @@ function extractContent(html, filePath) {
 }
 
 function prevChapter() {
+  cancelScrollSave();
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
   persistScroll();
   if (currentChapterIdx > 0) openChapter(currentChapterIdx - 1);
 }
 function nextChapter() {
+  cancelScrollSave();
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
   persistScroll();
   const book = books[currentBookIdx];
@@ -1140,6 +1144,7 @@ function goToPage(val) {
   var num = parseInt(val, 10);
   var book = books[currentBookIdx];
   if (!num || num < 1 || num > book.chapters.length) return;
+  cancelScrollSave();
   savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
   persistScroll();
   openChapter(num - 1);
@@ -1166,6 +1171,11 @@ function persistScroll() {
   localStorage.setItem('ss_books', savedScrollBooks.toString());
   localStorage.setItem('ss_chapters', JSON.stringify(savedScrollChapters));
   localStorage.setItem('ss_reader', JSON.stringify(savedScrollReader));
+}
+
+// 取消尚未觸發的 scroll throttle（避免轉頁時誤存）
+function cancelScrollSave() {
+  if (_scrollSaveTimer) { clearTimeout(_scrollSaveTimer); _scrollSaveTimer = null; }
 }
 
 var handlingPopstate = false;
@@ -1263,6 +1273,7 @@ function restoreNavState() {
       if (restoreScroll) {
         var scrollKey = state.bookIdx + '_' + state.chapterIdx;
         savedScrollReader[scrollKey] = restoreScroll;
+        persistScroll();
       }
       openBook(state.bookIdx);
       var book = books[state.bookIdx];
@@ -1337,6 +1348,7 @@ function updateUrl() {
 }
 
 function goBack() {
+  cancelScrollSave();
   document.getElementById('pageNav').classList.remove('show');
   clearSearchHighlights();
   if (currentView === 'reader') {
