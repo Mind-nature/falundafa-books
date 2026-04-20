@@ -50,6 +50,69 @@
     font-size: 11px; cursor: pointer; white-space: nowrap;
   }
   .navbar .notice-btn:active { background: rgba(255,255,255,0.4); }
+  .navbar .bookmark-btn {
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    width: 32px; height: 32px; border-radius: 6px;
+    font-size: 16px; cursor: pointer; line-height: 1;
+  }
+  .navbar .bookmark-btn:active { background: rgba(255,255,255,0.4); }
+  .navbar .bookmark-btn.bookmarked { background: rgba(255,200,50,0.35); color: #ffe066; }
+
+  /* === 書籤面板 === */
+  .bookmark-overlay {
+    display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5); z-index: 200;
+    justify-content: center; align-items: center; padding: 20px;
+  }
+  .bookmark-overlay.show { display: flex; }
+  .bookmark-box {
+    background: white; border-radius: 12px; position: relative;
+    max-width: 480px; width: 100%; max-height: 80vh; display: flex; flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3); color: #333;
+  }
+  body.dark .bookmark-box { background: #1e1e1e; color: #eee; }
+  .bookmark-box h3 { text-align: center; margin: 0; padding: 20px 48px 12px; font-size: 17px; color: #0a2e4a; border-bottom: 1px solid #eee; }
+  body.dark .bookmark-box h3 { color: #90c0e0; border-color: #333; }
+  .bookmark-toggle-row {
+    padding: 12px 20px; border-bottom: 1px solid #eee;
+    display: flex; align-items: center; gap: 10px;
+  }
+  body.dark .bookmark-toggle-row { border-color: #333; }
+  .bookmark-toggle-row .bm-page-label { flex: 1; font-size: 14px; color: #555; }
+  body.dark .bookmark-toggle-row .bm-page-label { color: #aaa; }
+  .bookmark-toggle-btn {
+    padding: 6px 16px; border-radius: 8px; border: 1px solid #0a2e4a;
+    background: transparent; color: #0a2e4a; font-size: 13px; cursor: pointer; white-space: nowrap;
+  }
+  body.dark .bookmark-toggle-btn { border-color: #90c0e0; color: #90c0e0; }
+  .bookmark-toggle-btn.is-bookmarked { background: #0a2e4a; color: white; }
+  body.dark .bookmark-toggle-btn.is-bookmarked { background: #1a4a6a; color: #ffe066; }
+  .bookmark-list { overflow-y: auto; padding: 8px 0; flex: 1; }
+  .bookmark-empty { text-align: center; color: #aaa; padding: 32px 20px; font-size: 14px; }
+  .bookmark-item {
+    display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+    cursor: pointer; border-bottom: 1px solid #f0f0f0;
+  }
+  body.dark .bookmark-item { border-color: #2a2a2a; }
+  .bookmark-item:hover { background: #f5f8ff; }
+  body.dark .bookmark-item:hover { background: #252525; }
+  .bookmark-item-info { flex: 1; min-width: 0; }
+  .bookmark-item-book { font-size: 11px; color: #888; margin-bottom: 2px; }
+  .bookmark-item-ch { font-size: 14px; color: #0a2e4a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  body.dark .bookmark-item-ch { color: #90c0e0; }
+  .bookmark-item-time { font-size: 11px; color: #bbb; white-space: nowrap; }
+  .bookmark-del {
+    background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer;
+    padding: 0 4px; line-height: 1;
+  }
+  .bookmark-del:hover { color: #e74c3c; }
+  .bookmark-box-footer { padding: 12px 20px; text-align: center; border-top: 1px solid #eee; }
+  body.dark .bookmark-box-footer { border-color: #333; }
+  .bookmark-close-btn {
+    padding: 8px 32px; background: #0a2e4a; color: white; border: none;
+    border-radius: 8px; font-size: 15px; cursor: pointer;
+  }
+  .bookmark-close-btn:active { background: #1a4a6a; }
 
   /* === 注意事項彈窗 === */
   .notice-overlay {
@@ -412,7 +475,24 @@
     <button onclick="changeFontSize(-1)">A-</button>
     <button onclick="changeFontSize(1)">A+</button>
   </div>
+  <button class="bookmark-btn" id="bookmarkBtn" onclick="openBookmarkPanel()" title="書籤">🔖</button>
   <button class="theme-btn" onclick="toggleDark()">☽</button>
+</div>
+
+<!-- 書籤面板 -->
+<div class="bookmark-overlay" id="bookmarkOverlay" onclick="if(event.target===this)closeBookmarkPanel()">
+  <div class="bookmark-box">
+    <button class="notice-x" onclick="closeBookmarkPanel()">✕</button>
+    <h3>書籤</h3>
+    <div class="bookmark-toggle-row" id="bmToggleRow" style="display:none">
+      <span class="bm-page-label" id="bmPageLabel"></span>
+      <button class="bookmark-toggle-btn" id="bmToggleBtn" onclick="toggleBookmarkCurrent()"></button>
+    </div>
+    <div class="bookmark-list" id="bmList"></div>
+    <div class="bookmark-box-footer">
+      <button class="bookmark-close-btn" onclick="closeBookmarkPanel()">關閉</button>
+    </div>
+  </div>
 </div>
 
 <!-- 注意事項彈窗 -->
@@ -615,6 +695,7 @@ function openBook(idx, skipUrlUpdate, targetChapter) {
     document.getElementById('prevBtnTop').style.display = 'none';
     document.getElementById('nextBtnTop').style.display = 'none';
     showPage('reader');
+    updateBookmarkBtn();
     return;
   }
 
@@ -863,6 +944,7 @@ function openChapter(idx) {
   loadContent(chapter.file);
   showPage('reader');
   updateUrl();
+  updateBookmarkBtn();
 
   // 預載入前後頁的內容和圖片（僅 http 模式）
   if (!isFileProtocol) {
@@ -1351,6 +1433,7 @@ function goBack() {
   cancelScrollSave();
   document.getElementById('pageNav').classList.remove('show');
   clearSearchHighlights();
+  updateBookmarkBtn();
   if (currentView === 'reader') {
     // 記住閱讀器滾動位置
     savedScrollReader[currentBookIdx + '_' + currentChapterIdx] = window.scrollY || window.pageYOffset || 0;
@@ -1423,6 +1506,149 @@ function changeFontSize(delta) {
   localStorage.setItem('fontSize', fontSize);
   if (delta > 0 && fontSize === 34 && prev === 34) showToast('目前是最大字型，如需再放大可以用網頁的縮放功能');
   if (delta < 0 && fontSize === 14 && prev === 14) showToast('目前是最小字型，如需再縮小可以用網頁的縮放功能');
+}
+
+// ============================================================
+// 書籤功能
+// ============================================================
+var bookmarksList = JSON.parse(localStorage.getItem('bookmarks') || '[]');
+
+function saveBookmarksList() {
+  localStorage.setItem('bookmarks', JSON.stringify(bookmarksList));
+}
+
+function getCurrentBookmarkKey() {
+  if (currentBookIdx < 0 || currentView !== 'reader') return null;
+  var book = books[currentBookIdx];
+  if (!book) return null;
+  return 'b' + currentBookIdx + 'c' + currentChapterIdx;
+}
+
+function isCurrentPageBookmarked() {
+  var key = getCurrentBookmarkKey();
+  if (!key) return false;
+  return bookmarksList.some(function(bm) { return bm.key === key; });
+}
+
+function updateBookmarkBtn() {
+  var btn = document.getElementById('bookmarkBtn');
+  if (!btn) return;
+  if (isCurrentPageBookmarked()) {
+    btn.classList.add('bookmarked');
+  } else {
+    btn.classList.remove('bookmarked');
+  }
+}
+
+function getChapterLabel() {
+  if (currentBookIdx < 0) return '';
+  var book = books[currentBookIdx];
+  if (!book) return '';
+  var hongYinBooks = [15, 26, 39, 45, 46, 51];
+  if (hongYinBooks.indexOf(book.id) !== -1) {
+    return book.name + ' 第' + (currentChapterIdx + 1) + '頁';
+  }
+  if (book.type === 'single') return book.name;
+  var ch = book.chapters && book.chapters[currentChapterIdx];
+  return ch ? ch.name : book.name;
+}
+
+function toggleBookmarkCurrent() {
+  var key = getCurrentBookmarkKey();
+  if (!key) return;
+  var idx = bookmarksList.findIndex(function(bm) { return bm.key === key; });
+  if (idx >= 0) {
+    bookmarksList.splice(idx, 1);
+    showToast('已移除書籤');
+  } else {
+    var book = books[currentBookIdx];
+    bookmarksList.unshift({
+      key: key,
+      bookIdx: currentBookIdx,
+      bookName: book ? book.name : '',
+      chIdx: currentChapterIdx,
+      chLabel: getChapterLabel(),
+      time: Date.now()
+    });
+    showToast('已加入書籤');
+  }
+  saveBookmarksList();
+  updateBookmarkBtn();
+  renderBookmarkPanel();
+}
+
+function formatBookmarkTime(ts) {
+  var d = new Date(ts);
+  var pad = function(n) { return n < 10 ? '0' + n : '' + n; };
+  return d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate())
+    + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function renderBookmarkPanel() {
+  // Toggle row
+  var toggleRow = document.getElementById('bmToggleRow');
+  var toggleBtn = document.getElementById('bmToggleBtn');
+  var pageLabel = document.getElementById('bmPageLabel');
+  var onReaderPage = currentView === 'reader' && currentBookIdx >= 0;
+  if (onReaderPage) {
+    toggleRow.style.display = 'flex';
+    pageLabel.textContent = getChapterLabel();
+    if (isCurrentPageBookmarked()) {
+      toggleBtn.textContent = '✓ 已加入書籤';
+      toggleBtn.classList.add('is-bookmarked');
+    } else {
+      toggleBtn.textContent = '+ 加入書籤';
+      toggleBtn.classList.remove('is-bookmarked');
+    }
+  } else {
+    toggleRow.style.display = 'none';
+  }
+
+  // Bookmark list
+  var list = document.getElementById('bmList');
+  if (bookmarksList.length === 0) {
+    list.innerHTML = '<div class="bookmark-empty">尚無書籤<br><span style="font-size:12px">閱讀時點選 🔖 可加入書籤</span></div>';
+    return;
+  }
+  list.innerHTML = bookmarksList.map(function(bm, i) {
+    return '<div class="bookmark-item" onclick="jumpToBookmark(' + i + ')">' +
+      '<div class="bookmark-item-info">' +
+        '<div class="bookmark-item-book">' + escapeHtml(bm.bookName) + '</div>' +
+        '<div class="bookmark-item-ch">' + escapeHtml(bm.chLabel) + '</div>' +
+      '</div>' +
+      '<div class="bookmark-item-time">' + formatBookmarkTime(bm.time) + '</div>' +
+      '<button class="bookmark-del" onclick="event.stopPropagation();removeBookmark(' + i + ')" title="刪除書籤">×</button>' +
+    '</div>';
+  }).join('');
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function openBookmarkPanel() {
+  renderBookmarkPanel();
+  document.getElementById('bookmarkOverlay').classList.add('show');
+  document.body.classList.add('notice-open');
+}
+
+function closeBookmarkPanel() {
+  document.getElementById('bookmarkOverlay').classList.remove('show');
+  document.body.classList.remove('notice-open');
+}
+
+function jumpToBookmark(i) {
+  var bm = bookmarksList[i];
+  if (!bm) return;
+  closeBookmarkPanel();
+  openBook(bm.bookIdx, false, bm.chIdx);
+}
+
+function removeBookmark(i) {
+  bookmarksList.splice(i, 1);
+  saveBookmarksList();
+  updateBookmarkBtn();
+  renderBookmarkPanel();
 }
 
 function showToast(msg) {
