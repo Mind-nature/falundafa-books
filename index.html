@@ -153,14 +153,14 @@
   }
   .notice-x:hover { color: #333; }
   .feature-hide-today {
-    position: absolute; top: -10px; right: 28px; z-index: 1;
-    display: inline-flex; align-items: center; gap: 5px;
-    background: rgba(10, 46, 74, 0.85); color: white;
-    padding: 5px 10px; border-radius: 14px;
-    font-size: 12px; cursor: pointer; user-select: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    position: absolute; top: -14px; right: 36px; z-index: 1;
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(10, 46, 74, 0.9); color: white;
+    padding: 8px 14px; border-radius: 18px;
+    font-size: 14px; cursor: pointer; user-select: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
   }
-  .feature-hide-today input { width: 13px; height: 13px; cursor: pointer; margin: 0; }
+  .feature-hide-today input { width: 16px; height: 16px; cursor: pointer; margin: 0; }
   body.notice-open { overflow: hidden; }
 
   #pageNav {
@@ -512,9 +512,9 @@
 <!-- 新功能公告：書籤 -->
 <div class="notice-overlay" id="featureOverlay" onclick="if(event.target===this)closeFeatureNotice()">
   <div class="notice-box">
-    <label class="feature-hide-today" title="今日不再顯示">
+    <label class="feature-hide-today" title="7日內不再顯示">
       <input type="checkbox" id="featureHideToday">
-      <span>今日不再顯示</span>
+      <span>7 日內不再顯示</span>
     </label>
     <button class="notice-x" onclick="closeFeatureNotice()">✕</button>
     <div class="notice-content">
@@ -1856,7 +1856,10 @@ function openFeatureNotice() {
 function closeFeatureNotice() {
   var cb = document.getElementById('featureHideToday');
   if (cb && cb.checked) {
-    localStorage.setItem(FEATURE_KEY, new Date().toISOString().slice(0, 10));
+    // 7 日後再顯示
+    var d = new Date();
+    d.setDate(d.getDate() + 6);
+    localStorage.setItem(FEATURE_KEY, d.toISOString().slice(0, 10));
   }
   document.getElementById('featureOverlay').classList.remove('show');
   document.body.classList.remove('notice-open');
