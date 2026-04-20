@@ -1592,6 +1592,10 @@ function toggleBookmarkCurrent() {
     bookmarksList.splice(idx, 1);
     showToast('已移除書籤');
   } else {
+    if (bookmarksList.length >= 10) {
+      showToast('書籤已達上限（10 筆），請先刪除不要的書籤');
+      return;
+    }
     var book = books[currentBookIdx];
     bookmarksList.unshift({
       key: key,
