@@ -1681,7 +1681,29 @@ function jumpToBookmark(i) {
   if (!bm) return;
   closeBookmarkPanel();
   pendingBookmarkScroll = bm;
-  openBook(bm.bookIdx, false, bm.chIdx);
+
+  var book = books[bm.bookIdx];
+  if (!book) {
+    pendingBookmarkScroll = null;
+    return;
+  }
+
+  // 單頁書：openBook 直接進入閱讀器
+  if (book.type === 'single') {
+    openBook(bm.bookIdx);
+    return;
+  }
+
+  // 洪吟系列：openBook 透過 targetChapter 直接進入指定章節
+  var hongYinBooks = [15, 26, 39, 45, 46, 51];
+  if (hongYinBooks.indexOf(book.id) !== -1) {
+    openBook(bm.bookIdx, false, bm.chIdx);
+    return;
+  }
+
+  // 其他多章節書：openBook 只顯示章節列表，需另外呼叫 openChapter
+  openBook(bm.bookIdx);
+  openChapter(bm.chIdx);
 }
 
 function removeBookmark(i) {
@@ -1700,23 +1722,38 @@ function applyBookmarkScroll() {
   if (frac <= 0) return true; // 頁首不需要捲動
 
   var applied = false;
-  var minHeight = window.innerHeight * 1.2; // 頁面至少要比螢幕稍高才算渲染完成
-
   function doScroll() {
     if (applied) return;
-    var scrollH = document.documentElement.scrollHeight;
-    var total = scrollH - window.innerHeight;
-    if (total < minHeight) return; // 頁面還沒渲染完，等下次
+    var total = document.documentElement.scrollHeight - window.innerHeight;
+    if (total < 50) return; // 頁面尚未渲染
     applied = true;
     var pos = Math.round(frac * total);
     window.scrollTo(0, pos);
     showToast('已定位到書籤位置（' + Math.round(frac * 100) + '%）');
   }
 
-  // 分三個時間點嘗試（文字頁100ms可以，圖片頁需要更久）
-  setTimeout(doScroll, 100);
-  setTimeout(doScroll, 500);
-  setTimeout(doScroll, 1200);
+  // 1. 文字頁：DOM 設好後馬上能算出高度
+  setTimeout(doScroll, 80);
+
+  // 2. 圖片頁：等所有圖片載入後再算（圖片影響高度）
+  setTimeout(function() {
+    var reader = document.getElementById('readerContent');
+    if (!reader) return;
+    var imgs = reader.querySelectorAll('img');
+    if (imgs.length === 0) { doScroll(); return; }
+    var pending = 0;
+    var onDone = function() { pending--; if (pending <= 0) doScroll(); };
+    imgs.forEach(function(img) {
+      if (img.complete && img.naturalHeight > 0) return;
+      pending++;
+      img.addEventListener('load', onDone, { once: true });
+      img.addEventListener('error', onDone, { once: true });
+    });
+    if (pending === 0) doScroll();
+  }, 0);
+
+  // 3. 兜底：1.5 秒後不管怎樣強制捲動
+  setTimeout(doScroll, 1500);
   return true;
 }
 
