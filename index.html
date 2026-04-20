@@ -1518,27 +1518,46 @@ function changeFontSize(delta) {
 // 書籤功能
 // ============================================================
 var bookmarksList = JSON.parse(localStorage.getItem('bookmarks') || '[]');
-var pendingBookmarkScroll = null; // 跳至書籤後要捲到的位置 {frac, snippet}
+// 相容舊資料：把 key → pageKey、補 id
+bookmarksList.forEach(function(bm) {
+  if (!bm.pageKey && bm.key) bm.pageKey = bm.key;
+  if (!bm.id) bm.id = (bm.time || Date.now()) + '_' + Math.random().toString(36).slice(2, 6);
+});
+var pendingBookmarkScroll = null; // 跳至書籤後要捲到的位置
 
 function saveBookmarksList() {
   localStorage.setItem('bookmarks', JSON.stringify(bookmarksList));
 }
 
-function getCurrentBookmarkKey() {
+function getCurrentPageKey() {
   if (currentBookIdx < 0 || currentView !== 'reader') return null;
   var book = books[currentBookIdx];
   if (!book) return null;
   return 'b' + currentBookIdx + 'c' + currentChapterIdx;
 }
 
-function findBookmarkForCurrentPage() {
-  var key = getCurrentBookmarkKey();
-  if (!key) return null;
-  return bookmarksList.find(function(bm) { return bm.key === key; }) || null;
+// 找當前頁所有書籤
+function findBookmarksOnCurrentPage() {
+  var pageKey = getCurrentPageKey();
+  if (!pageKey) return [];
+  return bookmarksList.filter(function(bm) { return bm.pageKey === pageKey; });
+}
+
+// 找當前位置附近（3% 以內）的書籤
+function findBookmarkAtCurrentPos() {
+  var pageBms = findBookmarksOnCurrentPage();
+  if (pageBms.length === 0) return null;
+  var frac = getScrollFrac();
+  var found = null, minDiff = 0.03;
+  pageBms.forEach(function(bm) {
+    var diff = Math.abs((bm.scrollFrac || 0) - frac);
+    if (diff <= minDiff) { minDiff = diff; found = bm; }
+  });
+  return found;
 }
 
 function isCurrentPageBookmarked() {
-  return !!findBookmarkForCurrentPage();
+  return findBookmarksOnCurrentPage().length > 0;
 }
 
 function updateBookmarkBtn() {
@@ -1585,12 +1604,14 @@ function getScrollFrac() {
 }
 
 function toggleBookmarkCurrent() {
-  var key = getCurrentBookmarkKey();
-  if (!key) return;
-  var idx = bookmarksList.findIndex(function(bm) { return bm.key === key; });
-  if (idx >= 0) {
-    bookmarksList.splice(idx, 1);
-    showToast('已移除書籤');
+  var pageKey = getCurrentPageKey();
+  if (!pageKey) return;
+  // 如果當前位置附近已有書籤，則移除；否則新增
+  var existing = findBookmarkAtCurrentPos();
+  if (existing) {
+    var idx = bookmarksList.indexOf(existing);
+    if (idx >= 0) bookmarksList.splice(idx, 1);
+    showToast('已移除此位置書籤');
   } else {
     if (bookmarksList.length >= 10) {
       showToast('書籤已達上限（10 筆），請先刪除不要的書籤');
@@ -1598,7 +1619,8 @@ function toggleBookmarkCurrent() {
     }
     var book = books[currentBookIdx];
     bookmarksList.unshift({
-      key: key,
+      id: Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      pageKey: pageKey,
       bookIdx: currentBookIdx,
       bookName: book ? book.name : '',
       chIdx: currentChapterIdx,
@@ -1629,12 +1651,12 @@ function renderBookmarkPanel() {
   var onReaderPage = currentView === 'reader' && currentBookIdx >= 0;
   if (onReaderPage) {
     toggleRow.style.display = 'flex';
-    var bm = findBookmarkForCurrentPage();
+    var atPos = findBookmarkAtCurrentPos();
     var frac = getScrollFrac();
     var pct = Math.round(frac * 100);
     pageLabel.textContent = getChapterLabel() + (pct > 0 ? '（' + pct + '%）' : '');
-    if (bm) {
-      toggleBtn.textContent = '✓ 已加入書籤';
+    if (atPos) {
+      toggleBtn.textContent = '✓ 移除此位置書籤';
       toggleBtn.classList.add('is-bookmarked');
     } else {
       toggleBtn.textContent = '+ 加入書籤';
