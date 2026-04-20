@@ -152,6 +152,15 @@
     width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
   }
   .notice-x:hover { color: #333; }
+  .feature-hide-today {
+    position: absolute; top: -10px; right: 28px; z-index: 1;
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(10, 46, 74, 0.85); color: white;
+    padding: 5px 10px; border-radius: 14px;
+    font-size: 12px; cursor: pointer; user-select: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  .feature-hide-today input { width: 13px; height: 13px; cursor: pointer; margin: 0; }
   body.notice-open { overflow: hidden; }
 
   #pageNav {
@@ -503,6 +512,10 @@
 <!-- 新功能公告：書籤 -->
 <div class="notice-overlay" id="featureOverlay" onclick="if(event.target===this)closeFeatureNotice()">
   <div class="notice-box">
+    <label class="feature-hide-today" title="今日不再顯示">
+      <input type="checkbox" id="featureHideToday">
+      <span>今日不再顯示</span>
+    </label>
     <button class="notice-x" onclick="closeFeatureNotice()">✕</button>
     <div class="notice-content">
       <h3><span style="color:#e8a317">★</span> 新增功能：書籤</h3>
@@ -513,14 +526,8 @@
       <div class="notice-item"><b>數量上限：</b>最多 <b>10 筆</b> 書籤，超過時請先刪除舊書籤。</div>
       <div class="notice-item"><b>跨書管理：</b>可對任一本書、任一頁加入書籤，集中在書籤面板中查看與管理。</div>
       <div class="notice-item"><b>本地儲存：</b>書籤儲存於本機瀏覽器（清除瀏覽資料會一併消失）。</div>
-      <div style="text-align:center; margin-top:16px;">
-        <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:#666;cursor:pointer;">
-          <input type="checkbox" id="featureHideToday" style="width:16px;height:16px;cursor:pointer;">
-          今日不再顯示
-        </label>
-      </div>
-      <div style="text-align:center; margin-top:12px;">
-        <button class="notice-close" onclick="closeFeatureNotice()" style="margin:0;">我知道了</button>
+      <div style="text-align:center; margin-top:18px;">
+        <a href="https://brawny-feather-d76.notion.site/falundafa-books-manual" target="_blank" style="display:inline-block; padding:8px 24px; background:#0a2e4a; color:white; border-radius:8px; font-size:14px; text-decoration:none;">閱讀器使用說明</a>
       </div>
     </div>
   </div>
