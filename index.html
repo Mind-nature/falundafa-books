@@ -1697,13 +1697,26 @@ function applyBookmarkScroll() {
   var bm = pendingBookmarkScroll;
   pendingBookmarkScroll = null;
   var frac = bm.scrollFrac || 0;
-  setTimeout(function() {
-    var total = document.documentElement.scrollHeight - window.innerHeight;
+  if (frac <= 0) return true; // 頁首不需要捲動
+
+  var applied = false;
+  var minHeight = window.innerHeight * 1.2; // 頁面至少要比螢幕稍高才算渲染完成
+
+  function doScroll() {
+    if (applied) return;
+    var scrollH = document.documentElement.scrollHeight;
+    var total = scrollH - window.innerHeight;
+    if (total < minHeight) return; // 頁面還沒渲染完，等下次
+    applied = true;
     var pos = Math.round(frac * total);
     window.scrollTo(0, pos);
-    // 短暫顯示書籤位置提示
-    if (frac > 0.01) showToast('已定位到書籤位置（' + Math.round(frac * 100) + '%）');
-  }, 80);
+    showToast('已定位到書籤位置（' + Math.round(frac * 100) + '%）');
+  }
+
+  // 分三個時間點嘗試（文字頁100ms可以，圖片頁需要更久）
+  setTimeout(doScroll, 100);
+  setTimeout(doScroll, 500);
+  setTimeout(doScroll, 1200);
   return true;
 }
 
