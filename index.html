@@ -1737,13 +1737,26 @@ function jumpToBookmark(i) {
   var bm = bookmarksList[i];
   if (!bm) return;
   closeBookmarkPanel();
-  pendingBookmarkScroll = bm;
 
   var book = books[bm.bookIdx];
-  if (!book) {
-    pendingBookmarkScroll = null;
+  if (!book) return;
+
+  // 已經在同一頁：直接捲動，不重新載入（避免時序問題）
+  var sameChapter = (currentView === 'reader'
+    && currentBookIdx === bm.bookIdx
+    && (book.type === 'single' || currentChapterIdx === bm.chIdx));
+  if (sameChapter) {
+    var frac = bm.scrollFrac || 0;
+    var total = document.documentElement.scrollHeight - window.innerHeight;
+    var pos = Math.round(frac * total);
+    window.scrollTo({ top: pos, behavior: 'smooth' });
+    if (frac > 0) showToast('已定位到書籤位置（' + Math.round(frac * 100) + '%）');
+    updateBookmarkBtn();
     return;
   }
+
+  // 不同頁：用 pendingBookmarkScroll 機制
+  pendingBookmarkScroll = bm;
 
   // 單頁書：openBook 直接進入閱讀器
   if (book.type === 'single') {
