@@ -1669,12 +1669,10 @@ function renderBookmarkPanel() {
   }
   list.innerHTML = bookmarksList.map(function(bm, i) {
     var pct = bm.scrollFrac != null ? Math.round(bm.scrollFrac * 100) : null;
-    var sub = bm.snippet ? escapeHtml(bm.snippet) : (pct != null ? '第 ' + pct + '% 處' : '');
     return '<div class="bookmark-item" onclick="jumpToBookmark(' + i + ')">' +
       '<div class="bookmark-item-info">' +
         '<div class="bookmark-item-book">' + escapeHtml(bm.bookName) + (pct != null ? ' · ' + pct + '%' : '') + '</div>' +
         '<div class="bookmark-item-ch">' + escapeHtml(bm.chLabel) + '</div>' +
-        (sub ? '<div class="bookmark-item-snippet">' + sub + '</div>' : '') +
       '</div>' +
       '<div class="bookmark-item-time">' + formatBookmarkTime(bm.time) + '</div>' +
       '<button class="bookmark-del" onclick="event.stopPropagation();removeBookmark(' + i + ')" title="刪除書籤">×</button>' +
