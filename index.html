@@ -78,7 +78,7 @@
   body.dark .bookmark-box h3 { color: #90c0e0; border-color: #333; }
   .bookmark-toggle-row {
     padding: 12px 20px; border-bottom: 1px solid #eee;
-    display: flex; align-items: center; gap: 10px;
+    display: flex; align-items: center; justify-content: center;
   }
   body.dark .bookmark-toggle-row { border-color: #333; }
   .bookmark-toggle-row .bm-page-label { flex: 1; font-size: 14px; color: #555; }
@@ -490,7 +490,6 @@
     <button class="notice-x" onclick="closeBookmarkPanel()">✕</button>
     <h3>書籤</h3>
     <div class="bookmark-toggle-row" id="bmToggleRow" style="display:none">
-      <span class="bm-page-label" id="bmPageLabel"></span>
       <button class="bookmark-toggle-btn" id="bmToggleBtn" onclick="toggleBookmarkCurrent()"></button>
     </div>
     <div class="bookmark-list" id="bmList"></div>
@@ -1647,14 +1646,10 @@ function renderBookmarkPanel() {
   // Toggle row（閱讀中才顯示）
   var toggleRow = document.getElementById('bmToggleRow');
   var toggleBtn = document.getElementById('bmToggleBtn');
-  var pageLabel = document.getElementById('bmPageLabel');
   var onReaderPage = currentView === 'reader' && currentBookIdx >= 0;
   if (onReaderPage) {
     toggleRow.style.display = 'flex';
     var atPos = findBookmarkAtCurrentPos();
-    var frac = getScrollFrac();
-    var pct = Math.round(frac * 100);
-    pageLabel.textContent = getChapterLabel() + (pct > 0 ? '（' + pct + '%）' : '');
     if (atPos) {
       toggleBtn.textContent = '✓ 移除此位置書籤';
       toggleBtn.classList.add('is-bookmarked');
