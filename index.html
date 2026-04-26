@@ -106,8 +106,8 @@
   .bookmark-item-snippet { font-size: 12px; color: #999; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   body.dark .bookmark-item-snippet { color: #666; }
   .bookmark-del {
-    background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer;
-    padding: 0 4px; line-height: 1;
+    background: none; border: none; color: #ccc; font-size: 26px; cursor: pointer;
+    padding: 4px 10px; line-height: 1;
   }
   .bookmark-del:hover { color: #e74c3c; }
   .bookmark-box-footer { padding: 12px 20px; text-align: center; border-top: 1px solid #eee; }
@@ -1767,6 +1767,8 @@ function removeBookmark(i) {
   var bm = bookmarksList[i];
   if (!bm) return;
   var label = bm.chLabel || bm.bookName || '此書籤';
+  var pct = bm.scrollFrac != null ? Math.round(bm.scrollFrac * 100) : null;
+  if (pct != null) label += '（' + pct + '%）';
   if (!confirm('確定要刪除書籤？\n\n' + label)) return;
   bookmarksList.splice(i, 1);
   saveBookmarksList();
