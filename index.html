@@ -1861,9 +1861,12 @@ function loadAndShowAnnouncement() {
   fetch('announcements.json?t=' + Date.now())
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var ann = data && data.current;
-      if (!ann || !ann.id) return;
-      if (ann.enabled === false) return; // 公告暫時關閉
+      if (!data) return;
+      var activeId = data.active;
+      if (!activeId) return; // 空 = 不顯示
+      var list = data.announcements || [];
+      var ann = list.find(function(a) { return a && a.id === activeId; });
+      if (!ann) return;
       if (!shouldShowAnnouncement(ann.id)) return;
       currentAnnouncement = ann;
       renderAnnouncement(ann);
