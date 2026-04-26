@@ -1,6 +1,6 @@
 {
   "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。",
-  "active": "",
+  "active": "範例草稿",
   "announcements": [
     {
       "id": "bookmark_v1",
@@ -18,7 +18,7 @@
       "linkText": "閱讀器使用說明"
     },
     {
-      "id": "範例草稿_請改我",
+      "id": "範例草稿",
       "title": "公告標題（最多 10~15 字）",
       "subtitle": "副標題，灰色小字，可省略",
       "items": [
