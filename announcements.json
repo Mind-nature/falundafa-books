@@ -1,0 +1,17 @@
+{
+  "current": {
+    "id": "bookmark_v1",
+    "title": "新增功能：書籤",
+    "subtitle": "標記閱讀位置，下次直接跳回繼續閱讀",
+    "items": [
+      { "label": "如何加入", "text": "閱讀時點選右上角 <i class=\"fi fi-rr-book-bookmark\" style=\"vertical-align:middle\"></i> <b>書籤</b> 按鈕開啟面板，再按「+ 加入書籤」即可記錄當下位置。" },
+      { "label": "精準定位", "text": "書籤會記錄你閱讀到頁面的哪一行（百分比位置），跳回時自動捲到原位。" },
+      { "label": "同頁多筆", "text": "同一頁可加入多個書籤（不同位置），方便分段標記重點。" },
+      { "label": "數量上限", "text": "最多 <b>10 筆</b> 書籤，超過時請先刪除舊書籤。" },
+      { "label": "跨書管理", "text": "可對任一本書、任一頁加入書籤，集中在書籤面板中查看與管理。" },
+      { "label": "本地儲存", "text": "書籤儲存於本機瀏覽器（清除瀏覽資料會一併消失）。" }
+    ],
+    "linkUrl": "https://brawny-feather-d76.notion.site/falundafa-books-manual",
+    "linkText": "閱讀器使用說明"
+  }
+}

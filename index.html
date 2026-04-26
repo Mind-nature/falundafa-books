@@ -509,7 +509,7 @@
   </div>
 </div>
 
-<!-- 新功能公告：書籤 -->
+<!-- 新功能公告（內容由 announcements.json 動態載入） -->
 <div class="notice-overlay" id="featureOverlay" onclick="if(event.target===this)closeFeatureNotice()">
   <div class="notice-box">
     <label class="feature-hide-today" title="7日內不再顯示">
@@ -517,19 +517,7 @@
       <span>7 日內不再顯示</span>
     </label>
     <button class="notice-x" onclick="closeFeatureNotice()">✕</button>
-    <div class="notice-content">
-      <h3><span style="color:#e8a317">★</span> 新增功能：書籤</h3>
-      <p style="text-align:center;color:#666;font-size:13px;margin-bottom:14px;">標記閱讀位置，下次直接跳回繼續閱讀</p>
-      <div class="notice-item"><b>如何加入：</b>閱讀時點選右上角 <i class="fi fi-rr-book-bookmark" style="vertical-align:middle"></i> <b>書籤</b> 按鈕開啟面板，再按「+ 加入書籤」即可記錄當下位置。</div>
-      <div class="notice-item"><b>精準定位：</b>書籤會記錄你閱讀到頁面的哪一行（百分比位置），跳回時自動捲到原位。</div>
-      <div class="notice-item"><b>同頁多筆：</b>同一頁可加入多個書籤（不同位置），方便分段標記重點。</div>
-      <div class="notice-item"><b>數量上限：</b>最多 <b>10 筆</b> 書籤，超過時請先刪除舊書籤。</div>
-      <div class="notice-item"><b>跨書管理：</b>可對任一本書、任一頁加入書籤，集中在書籤面板中查看與管理。</div>
-      <div class="notice-item"><b>本地儲存：</b>書籤儲存於本機瀏覽器（清除瀏覽資料會一併消失）。</div>
-      <div style="text-align:center; margin-top:18px;">
-        <a href="https://brawny-feather-d76.notion.site/falundafa-books-manual" target="_blank" style="display:inline-block; padding:8px 24px; background:#0a2e4a; color:white; border-radius:8px; font-size:14px; text-decoration:none;">閱讀器使用說明</a>
-      </div>
-    </div>
+    <div class="notice-content" id="featureContent"></div>
   </div>
 </div>
 
@@ -1853,26 +1841,72 @@ function closeNotice() {
   document.body.classList.remove('notice-open');
 }
 
-// 新功能公告：書籤
-var FEATURE_KEY = 'feature_bookmark_v1_hide';
-function shouldShowFeatureNotice() {
-  var hideUntil = localStorage.getItem(FEATURE_KEY);
+// 新功能公告（從 announcements.json 動態載入）
+var currentAnnouncement = null; // 載入後存放公告物件
+
+function announcementHideKey(id) {
+  return 'announce_' + id + '_hide';
+}
+
+function shouldShowAnnouncement(id) {
+  var hideUntil = localStorage.getItem(announcementHideKey(id));
   if (!hideUntil) return true;
   if (hideUntil === 'forever') return false;
   var todayStr = new Date().toISOString().slice(0, 10);
   return hideUntil < todayStr;
 }
+
+function loadAndShowAnnouncement() {
+  // 加版本參數避免快取
+  fetch('announcements.json?t=' + Date.now())
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var ann = data && data.current;
+      if (!ann || !ann.id) return;
+      if (!shouldShowAnnouncement(ann.id)) return;
+      currentAnnouncement = ann;
+      renderAnnouncement(ann);
+      openFeatureNotice();
+    })
+    .catch(function() {});
+}
+
+function renderAnnouncement(ann) {
+  var html = '';
+  if (ann.title) {
+    html += '<h3><span style="color:#e8a317">★</span> ' + ann.title + '</h3>';
+  }
+  if (ann.subtitle) {
+    html += '<p style="text-align:center;color:#666;font-size:13px;margin-bottom:14px;">' + ann.subtitle + '</p>';
+  }
+  if (ann.items && ann.items.length) {
+    ann.items.forEach(function(item) {
+      html += '<div class="notice-item">';
+      if (item.label) html += '<b>' + item.label + '：</b>';
+      html += (item.text || '');
+      html += '</div>';
+    });
+  }
+  if (ann.linkUrl && ann.linkText) {
+    html += '<div style="text-align:center; margin-top:18px;">' +
+      '<a href="' + ann.linkUrl + '" target="_blank" style="display:inline-block; padding:8px 24px; background:#0a2e4a; color:white; border-radius:8px; font-size:14px; text-decoration:none;">' +
+      ann.linkText + '</a></div>';
+  }
+  document.getElementById('featureContent').innerHTML = html;
+}
+
 function openFeatureNotice() {
   document.getElementById('featureOverlay').classList.add('show');
   document.body.classList.add('notice-open');
 }
+
 function closeFeatureNotice() {
   var cb = document.getElementById('featureHideToday');
-  if (cb && cb.checked) {
+  if (cb && cb.checked && currentAnnouncement) {
     // 7 日後再顯示
     var d = new Date();
     d.setDate(d.getDate() + 6);
-    localStorage.setItem(FEATURE_KEY, d.toISOString().slice(0, 10));
+    localStorage.setItem(announcementHideKey(currentAnnouncement.id), d.toISOString().slice(0, 10));
   }
   document.getElementById('featureOverlay').classList.remove('show');
   document.body.classList.remove('notice-open');
@@ -2664,8 +2698,8 @@ function renderXjwChapters(book) {
 
   // 新功能公告（只在首頁顯示，非從書中返回）
   setTimeout(function() {
-    if (currentView === 'books' && shouldShowFeatureNotice()) {
-      openFeatureNotice();
+    if (currentView === 'books') {
+      loadAndShowAnnouncement();
     }
   }, 500);
 
