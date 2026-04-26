@@ -16,6 +16,18 @@
       ],
       "linkUrl": "https://brawny-feather-d76.notion.site/falundafa-books-manual",
       "linkText": "閱讀器使用說明"
+    },
+    {
+      "id": "範例草稿_請改我",
+      "title": "公告標題（最多 10~15 字）",
+      "subtitle": "副標題，灰色小字，可省略",
+      "items": [
+        { "label": "重點一", "text": "說明文字。可用 <b>粗體</b>。" },
+        { "label": "重點二", "text": "另一段說明。" },
+        { "label": "重點三", "text": "更多說明..." }
+      ],
+      "linkUrl": "https://brawny-feather-d76.notion.site/falundafa-books-manual",
+      "linkText": "閱讀器使用說明"
     }
   ]
 }
