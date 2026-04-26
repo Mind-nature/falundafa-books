@@ -1764,6 +1764,10 @@ function jumpToBookmark(i) {
 }
 
 function removeBookmark(i) {
+  var bm = bookmarksList[i];
+  if (!bm) return;
+  var label = bm.chLabel || bm.bookName || '此書籤';
+  if (!confirm('確定要刪除書籤？\n\n' + label)) return;
   bookmarksList.splice(i, 1);
   saveBookmarksList();
   updateBookmarkBtn();
