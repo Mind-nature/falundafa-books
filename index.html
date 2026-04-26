@@ -53,9 +53,8 @@
   .navbar .notice-btn:active { background: rgba(255,255,255,0.4); }
   .navbar .bookmark-btn {
     background: rgba(255,255,255,0.2); border: none; color: white;
-    height: 32px; border-radius: 6px; padding: 0 10px;
-    font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px;
-    white-space: nowrap;
+    width: 32px; height: 32px; border-radius: 6px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
   .navbar .bookmark-btn i { font-size: 16px; line-height: 1; position: relative; top: 1px; }
   .navbar .bookmark-btn:active { background: rgba(255,255,255,0.4); }
@@ -489,7 +488,7 @@
     <button onclick="changeFontSize(-1)">A-</button>
     <button onclick="changeFontSize(1)">A+</button>
   </div>
-  <button class="bookmark-btn" id="bookmarkBtn" onclick="openBookmarkPanel()"><i class="fi fi-rr-book-bookmark"></i>書籤</button>
+  <button class="bookmark-btn" id="bookmarkBtn" onclick="openBookmarkPanel()" title="書籤"><i class="fi fi-rr-book-bookmark"></i></button>
   <button class="theme-btn" onclick="toggleDark()">☽</button>
 </div>
 
