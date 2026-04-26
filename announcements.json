@@ -1,6 +1,6 @@
 {
   "current": {
-    "enabled": true,
+    "enabled": false,
     "id": "bookmark_v1",
     "title": "新增功能：書籤",
     "subtitle": "標記閱讀位置，下次直接跳回繼續閱讀",
