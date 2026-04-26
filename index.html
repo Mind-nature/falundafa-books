@@ -1863,6 +1863,7 @@ function loadAndShowAnnouncement() {
     .then(function(data) {
       var ann = data && data.current;
       if (!ann || !ann.id) return;
+      if (ann.enabled === false) return; // 公告暫時關閉
       if (!shouldShowAnnouncement(ann.id)) return;
       currentAnnouncement = ann;
       renderAnnouncement(ann);
