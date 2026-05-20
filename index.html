@@ -472,6 +472,8 @@
   body.dark .clear-progress-btn { border-color: #444; color: #666; }
   body.dark .clear-progress-btn:active { background: #222; }
 </style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body>
 
@@ -564,6 +566,10 @@
   <div id="searchResults" style="padding:0 8px;display:none;"></div>
   <div class="book-list" id="bookList"></div>
   <button class="clear-progress-btn" id="clearProgressBtn" onclick="clearAllProgress()">清除所有已讀標記</button>
+  <div style="display:flex;gap:8px;padding:8px 12px;">
+    <button class="clear-progress-btn" style="margin:0;flex:1;" onclick="exportToGoogleDrive()">備份到 Google 雲端</button>
+    <button class="clear-progress-btn" style="margin:0;flex:1;" onclick="importFromGoogleDrive()">從 Google 雲端還原</button>
+  </div>
   <div style="padding:20px 16px;font-size:16px;color:#666;line-height:2;">
     此網站是由大法弟子在法輪大法官網擷取的，並且優化成手機可觀看的模式，方便同修們觀看。<br>
     資料來源：<br>
@@ -2637,6 +2643,132 @@ function renderXjwChapters(book) {
 
   el.innerHTML = html;
   el.style.fontSize = fontSize + 'px';
+}
+
+// ============================================================
+// Google Drive 備份/還原
+// ============================================================
+var GDRIVE_CLIENT_ID = '92968133356-m50r0dfqhv5uhai851im7ksr1vn4patd.apps.googleusercontent.com';
+var GDRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+var GDRIVE_FILENAME = 'falundafa-books-backup.json';
+var _gdriveTokenClient = null;
+var _gdriveAccessToken = null;
+
+function getBackupData() {
+  var data = {};
+  for (var i = 0; i < localStorage.length; i++) {
+    var key = localStorage.key(i);
+    if (key.startsWith('book_') || key === 'fontSize' || key === 'darkMode' ||
+        key === 'ss_books' || key === 'ss_chapters' || key === 'ss_reader' ||
+        key === 'navState' || key === 'bookmarks') {
+      data[key] = localStorage.getItem(key);
+    }
+  }
+  data._exportTime = new Date().toISOString();
+  return data;
+}
+
+function restoreBackupData(data) {
+  var count = 0;
+  for (var key in data) {
+    if (key === '_exportTime') continue;
+    localStorage.setItem(key, data[key]);
+    count++;
+  }
+  return count;
+}
+
+function gdriveAuth(callback) {
+  if (_gdriveAccessToken) { callback(_gdriveAccessToken); return; }
+  _gdriveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GDRIVE_CLIENT_ID,
+    scope: GDRIVE_SCOPES,
+    callback: function(resp) {
+      if (resp.error) {
+        showToast('Google 登入失敗');
+        return;
+      }
+      _gdriveAccessToken = resp.access_token;
+      callback(resp.access_token);
+    }
+  });
+  _gdriveTokenClient.requestAccessToken();
+}
+
+function gdriveFindFile(token, callback) {
+  fetch('https://www.googleapis.com/drive/v3/files?q=name%3D%27' + GDRIVE_FILENAME + '%27%20and%20trashed%3Dfalse&spaces=drive&fields=files(id,name,modifiedTime)', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    callback(data.files && data.files.length > 0 ? data.files[0] : null);
+  })
+  .catch(function() { callback(null); });
+}
+
+function exportToGoogleDrive() {
+  showToast('正在連接 Google 帳號...');
+  gdriveAuth(function(token) {
+    showToast('正在備份...');
+    var backupData = JSON.stringify(getBackupData(), null, 2);
+    gdriveFindFile(token, function(existingFile) {
+      var metadata = { name: GDRIVE_FILENAME, mimeType: 'application/json' };
+      var form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      form.append('file', new Blob([backupData], { type: 'application/json' }));
+
+      var url, method;
+      if (existingFile) {
+        url = 'https://www.googleapis.com/upload/drive/v3/files/' + existingFile.id + '?uploadType=multipart';
+        method = 'PATCH';
+      } else {
+        url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+        method = 'POST';
+      }
+
+      fetch(url, {
+        method: method,
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: form
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.id) {
+          showToast('備份成功！已存到 Google 雲端');
+        } else {
+          showToast('備份失敗');
+        }
+      })
+      .catch(function() { showToast('備份失敗'); });
+    });
+  });
+}
+
+function importFromGoogleDrive() {
+  showToast('正在連接 Google 帳號...');
+  gdriveAuth(function(token) {
+    showToast('正在搜尋備份檔案...');
+    gdriveFindFile(token, function(file) {
+      if (!file) {
+        showToast('找不到備份檔案');
+        return;
+      }
+      fetch('https://www.googleapis.com/drive/v3/files/' + file.id + '?alt=media', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (!data || !data._exportTime) {
+          showToast('備份檔案格式錯誤');
+          return;
+        }
+        var count = restoreBackupData(data);
+        showToast('還原成功！已恢復 ' + count + ' 筆資料');
+        setTimeout(function() { location.reload(); }, 1500);
+      })
+      .catch(function() { showToast('還原失敗'); });
+    });
+  });
 }
 
 // ============================================================
