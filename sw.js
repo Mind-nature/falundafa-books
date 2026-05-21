@@ -1,4 +1,4 @@
-var CACHE_NAME = 'falundafa-books-v1';
+var CACHE_NAME = 'falundafa-books-v2';
 var PRECACHE = [
   '/falundafa-books/',
   '/falundafa-books/index.html',

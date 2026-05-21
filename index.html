@@ -1362,12 +1362,7 @@ function restoreNavState() {
 
     // 恢復搜尋頁面
     if (state.view === 'books' && state.searchQuery) {
-      // 先隱藏書籍列表，避免閃一下首頁
-      document.getElementById('bookList').style.display = 'none';
-      document.querySelector('#pageBooks > div:last-child').style.display = 'none';
-      document.getElementById('searchResults').style.display = 'block';
       document.getElementById('searchInput').value = state.searchQuery;
-      // 觸發搜尋，延遲恢復滾動位置
       onSearchInput();
       if (state.scrollY) {
         setTimeout(function() { window.scrollTo(0, state.scrollY); }, 500);
@@ -1376,39 +1371,8 @@ function restoreNavState() {
     }
 
     // 首頁：恢復滾動位置
-    if (state.view === 'books' || !state.view) {
-      if (state.scrollY) {
-        setTimeout(function() { window.scrollTo(0, state.scrollY); }, 0);
-      }
-      return;
-    }
-    if (state.bookIdx < 0 || state.bookIdx >= books.length) return;
-
-    var restoreScroll = state.scrollY || 0;
-
-    if (state.view === 'chapters') {
-      openBook(state.bookIdx);
-      if (restoreScroll) {
-        setTimeout(function() { window.scrollTo(0, restoreScroll); }, 100);
-      }
-    } else if (state.view === 'reader') {
-      // 設定 savedScrollReader 讓 restoreReaderScroll 使用
-      if (restoreScroll) {
-        var scrollKey = state.bookIdx + '_' + state.chapterIdx;
-        savedScrollReader[scrollKey] = restoreScroll;
-        persistScroll();
-      }
-      openBook(state.bookIdx);
-      var book = books[state.bookIdx];
-      if (book.type === 'single') return; // openBook already opens reader
-      var hongYinBooks = [15, 26, 39, 45, 46, 51];
-      if (hongYinBooks.indexOf(book.id) !== -1) {
-        if (state.chapterIdx > 0 && state.chapterIdx < book.chapters.length) {
-          openChapter(state.chapterIdx);
-        }
-      } else if (state.chapterIdx >= 0 && state.chapterIdx < book.chapters.length) {
-        openChapter(state.chapterIdx);
-      }
+    if (state.scrollY && (!state.view || state.view === 'books')) {
+      setTimeout(function() { window.scrollTo(0, state.scrollY); }, 0);
     }
   } catch(e) {}
 }
@@ -2790,25 +2754,6 @@ function importFromGoogleDrive() {
   if (localStorage.getItem('darkMode') === 'true') {
     document.body.classList.add('dark');
     document.querySelector('.theme-btn').textContent = '☀';
-  }
-
-  // 在渲染前預先隱藏書籍列表（避免閃一下首頁）
-  var _hasHashRoute = location.hash.match(/^#book\/(\d+)$/) || location.search.match(/[?&]book=(\d+)/);
-  if (_hasHashRoute) {
-    document.getElementById('pageBooks').style.display = 'none';
-  } else {
-    var _savedNav = localStorage.getItem('navState');
-    if (_savedNav) {
-      try {
-        var _s = JSON.parse(_savedNav);
-        if (_s.searchQuery) {
-          document.getElementById('bookList').style.display = 'none';
-          document.getElementById('clearProgressBtn').style.display = 'none';
-          document.querySelector('#pageBooks > div:last-child').style.display = 'none';
-          document.getElementById('searchResults').style.display = 'block';
-        }
-      } catch(e) {}
-    }
   }
 
   renderBooks();
