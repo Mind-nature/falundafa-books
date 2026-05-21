@@ -2930,20 +2930,12 @@ function installPWA() {
   _deferredInstallPrompt.prompt();
   _deferredInstallPrompt.userChoice.then(function(result) {
     if (result.outcome === 'accepted') {
-      document.getElementById('installBtnWrap').style.display = 'none';
+      showToast('安裝成功！');
     }
     _deferredInstallPrompt = null;
   });
 }
-
-window.addEventListener('appinstalled', function() {
-  document.getElementById('installBtnWrap').style.display = 'none';
-  _deferredInstallPrompt = null;
-});
-
-// 已安裝的話不顯示按鈕
-if (window.matchMedia('(display-mode: standalone)').matches) {
-  document.getElementById('installBtnWrap').style.display = 'none';
+  document.getElementById('installBtnWrap').style.display = '';
 }
 </script>
 
