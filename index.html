@@ -2867,10 +2867,15 @@ if ('serviceWorker' in navigator) {
 
 // === PWA 安裝按鈕 ===
 var _deferredInstallPrompt = null;
+
+// 網頁版顯示按鈕，App（standalone）隱藏
+if (!window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('installBtnWrap').style.display = '';
+}
+
 window.addEventListener('beforeinstallprompt', function(e) {
   e.preventDefault();
   _deferredInstallPrompt = e;
-  document.getElementById('installBtnWrap').style.display = '';
 });
 
 function installPWA() {
