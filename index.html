@@ -591,10 +591,6 @@
     <div id="installBtnWrap" style="display:none;">
       <button class="clear-progress-btn" style="margin:0;" onclick="installPWA()">⬇ 加到主畫面</button>
     </div>
-    <a id="downloadApkBtn" href="falundafa-books.apk" download class="clear-progress-btn" style="margin:0;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="8,5 8,19 19,12"/></svg>
-      下載 APK
-    </a>
   </div>
 </div>
 
@@ -2875,15 +2871,9 @@ if ('serviceWorker' in navigator) {
 var _deferredInstallPrompt = null;
 
 // 手機網頁版才顯示安裝按鈕（App 內和電腦版不顯示）
-var _isStandalone = window.matchMedia('(display-mode: standalone)').matches;
 var _isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-if (_isMobile && !_isStandalone) {
+if (_isMobile && !window.matchMedia('(display-mode: standalone)').matches) {
   document.getElementById('installBtnWrap').style.display = '';
-}
-// App 內（standalone）不顯示「下載 APK」按鈕（使用者已經裝了）
-if (_isStandalone) {
-  var _apkBtn = document.getElementById('downloadApkBtn');
-  if (_apkBtn) _apkBtn.style.display = 'none';
 }
 
 window.addEventListener('beforeinstallprompt', function(e) {
