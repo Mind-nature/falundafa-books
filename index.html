@@ -749,7 +749,13 @@ function openBook(idx, skipUrlUpdate, targetChapter) {
   // 洪吟系列：跳過章節列表，直接進入閱讀器
   var hongYinBooks = [15, 26, 39, 45, 46, 51];
   if (hongYinBooks.indexOf(book.id) !== -1) {
-    var startCh = (targetChapter >= 0 && targetChapter < book.chapters.length) ? targetChapter : 0;
+    var startCh;
+    if (targetChapter >= 0 && targetChapter < book.chapters.length) {
+      startCh = targetChapter;
+    } else {
+      var lastCh = parseInt(localStorage.getItem('book_' + book.id + '_last') || '0', 10);
+      startCh = (lastCh >= 0 && lastCh < book.chapters.length) ? lastCh : 0;
+    }
     openChapter(startCh);
     document.getElementById('navTitle').textContent = book.name;
     return;
