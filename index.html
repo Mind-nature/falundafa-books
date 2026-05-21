@@ -2882,7 +2882,7 @@ window.addEventListener('beforeinstallprompt', function(e) {
 
 function installPWA() {
   if (!_deferredInstallPrompt) {
-    showToast('請重新整理頁面後再試');
+    showToast('已安裝，可從桌面開啟 App。若已移除，請重新整理頁面後再試');
     return;
   }
   _deferredInstallPrompt.prompt();
