@@ -587,6 +587,9 @@
   <div id="visitorCounter" style="text-align:left;padding:0 16px 16px;font-size:14px;color:#999;">
     瀏覽人次：<span id="visitorCount">載入中...</span>
   </div>
+  <div id="installBtnWrap" style="display:none;padding:0 12px 16px;">
+    <button id="installBtn" onclick="installPWA()" style="width:100%;padding:12px;border:1px solid #0a2e4a;border-radius:10px;background:#0a2e4a;color:white;font-size:15px;cursor:pointer;">📲 安裝到手機</button>
+  </div>
 </div>
 
 <!-- 第二層：章節列表 -->
@@ -2909,6 +2912,38 @@ function importFromGoogleDrive() {
 // === 註冊 Service Worker (PWA) ===
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(function() {});
+}
+
+// === PWA 安裝按鈕 ===
+var _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  document.getElementById('installBtnWrap').style.display = '';
+});
+
+function installPWA() {
+  if (!_deferredInstallPrompt) {
+    showToast('請使用 Chrome 瀏覽器開啟此網站');
+    return;
+  }
+  _deferredInstallPrompt.prompt();
+  _deferredInstallPrompt.userChoice.then(function(result) {
+    if (result.outcome === 'accepted') {
+      document.getElementById('installBtnWrap').style.display = 'none';
+    }
+    _deferredInstallPrompt = null;
+  });
+}
+
+window.addEventListener('appinstalled', function() {
+  document.getElementById('installBtnWrap').style.display = 'none';
+  _deferredInstallPrompt = null;
+});
+
+// 已安裝的話不顯示按鈕
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  document.getElementById('installBtnWrap').style.display = 'none';
 }
 </script>
 
