@@ -2794,21 +2794,21 @@ function importFromGoogleDrive() {
 
   // 在渲染前預先隱藏書籍列表（避免閃一下首頁）
   var _hasHashRoute = location.hash.match(/^#book\/(\d+)$/) || location.search.match(/[?&]book=(\d+)/);
-  var _savedNav = localStorage.getItem('navState');
   if (_hasHashRoute) {
     document.getElementById('pageBooks').style.display = 'none';
-  } else if (_savedNav) {
-    try {
-      var _s = JSON.parse(_savedNav);
-      if (_s.searchQuery) {
-        document.getElementById('bookList').style.display = 'none';
-        document.getElementById('clearProgressBtn').style.display = 'none';
-        document.querySelector('#pageBooks > div:last-child').style.display = 'none';
-        document.getElementById('searchResults').style.display = 'block';
-      } else if (_s.view && _s.view !== 'books') {
-        document.getElementById('pageBooks').style.display = 'none';
-      }
-    } catch(e) {}
+  } else {
+    var _savedNav = localStorage.getItem('navState');
+    if (_savedNav) {
+      try {
+        var _s = JSON.parse(_savedNav);
+        if (_s.searchQuery) {
+          document.getElementById('bookList').style.display = 'none';
+          document.getElementById('clearProgressBtn').style.display = 'none';
+          document.querySelector('#pageBooks > div:last-child').style.display = 'none';
+          document.getElementById('searchResults').style.display = 'block';
+        }
+      } catch(e) {}
+    }
   }
 
   renderBooks();
