@@ -2870,8 +2870,9 @@ if ('serviceWorker' in navigator) {
 // === PWA 安裝按鈕 ===
 var _deferredInstallPrompt = null;
 
-// 網頁版顯示按鈕，App（standalone）隱藏
-if (!window.matchMedia('(display-mode: standalone)').matches) {
+// 手機網頁版才顯示安裝按鈕（App 內和電腦版不顯示）
+var _isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (_isMobile && !window.matchMedia('(display-mode: standalone)').matches) {
   document.getElementById('installBtnWrap').style.display = '';
 }
 
