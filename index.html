@@ -1054,6 +1054,9 @@ function restoreReaderScroll() {
   }
   var key = currentBookIdx + '_' + currentChapterIdx;
   var pos = savedScrollReader[key] || 0;
+  // 如果記錄的位置太小（小於導覽列高度），會被 sticky navbar 遮住，直接歸零
+  var navH = (document.querySelector('.navbar') || {offsetHeight: 56}).offsetHeight || 56;
+  if (pos > 0 && pos < navH + 20) pos = 0;
   setTimeout(function() { window.scrollTo(0, pos); }, 0);
 }
 
