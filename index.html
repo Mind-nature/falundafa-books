@@ -400,6 +400,14 @@
     text-align: center; padding: 40px;
     color: #888; font-size: 16px;
   }
+  .loading-spinner {
+    display: inline-block; width: 28px; height: 28px;
+    border: 3px solid #ddd; border-top-color: #0a2e4a;
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+    margin-bottom: 10px;
+  }
+  body.dark .loading-spinner { border-color: #333; border-top-color: #90c0e0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
   /* === 翻頁按鈕 === */
   .page-nav {
@@ -1113,7 +1121,7 @@ function loadContent(filePath) {
     return;
   }
 
-  reader.innerHTML = '<div class="loading">載入中...</div>';
+  reader.innerHTML = '<div class="loading"><div class="loading-spinner"></div><br>載入中...</div>';
 
   fetch(filePath)
     .then(function(r) { return r.text(); })
@@ -1815,13 +1823,17 @@ function showToast(msg) {
   if (!t) {
     t = document.createElement('div');
     t.id = 'toast';
-    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:14px 24px;border-radius:10px;font-size:14px;z-index:10000;pointer-events:none;text-align:center;max-width:80vw;';
+    t.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:14px 24px;border-radius:10px;font-size:14px;z-index:10000;pointer-events:none;text-align:center;max-width:80vw;transition:opacity 0.3s;';
     document.body.appendChild(t);
   }
   t.innerHTML = msg;
   t.style.display = 'block';
+  t.style.opacity = '1';
   clearTimeout(t._timer);
-  t._timer = setTimeout(function(){ t.style.display = 'none'; }, 2000);
+  t._timer = setTimeout(function(){
+    t.style.opacity = '0';
+    setTimeout(function(){ t.style.display = 'none'; }, 300);
+  }, 2000);
 }
 
 // ============================================================
