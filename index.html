@@ -2275,6 +2275,7 @@ function showSearchResultsPage() {
       var searchQuery = document.getElementById('searchInput').value.trim();
       var chLabel = r.chName + ' ' + (occIdx + 1) + '/' + occTotal;
       html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\',' + occIdx + ',' + occTotal + ')">' +
+        '<span class="sr-book">' + r.bookName + '</span>' +
         '<span class="sr-chapter">' + chLabel + '</span>' +
         '<div class="sr-snippet">' + r.snippet + '</div>' +
       '</div>';
