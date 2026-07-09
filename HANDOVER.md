@@ -96,3 +96,67 @@
 - 網站內容（HTML/CSS/JS）改了 push GitHub 就即時生效，App 自動抓最新，不用重打包。
 - 重新打包 AAB 主要是為了封閉測試期間的「版本更新活動」。
 - assetlinks.json 已掛好兩個指紋（上傳金鑰 + Google 簽署金鑰），除非換金鑰否則不用動。
+
+---
+
+## 群組訊息範本（複製即用）
+
+### 三個自助連結
+- 群組：https://groups.google.com/g/mind-nature_test
+- 測試：https://play.google.com/apps/testing/io.github.mind_nature.falundafabooks
+- 下載：https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks
+
+### 【開跑訊息】第四輪重啟，發一次
+```
+🙏 各位夥伴，App 測試重新開始囉！
+
+已經裝好的朋友不用重裝，Google Play 有更新的話點一下更新即可 🙏
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+🔴 這次最重要的一件事（拜託大家）：
+
+接下來 14 天，請「每天」打開這個 App
+一天只要 1-2 分鐘（滑一滑、看一段就好）
+中途請「不要移除」App
+
+Google 規定要「每一天」都有足夠的人打開，
+只要某一天人數不夠，測試就要重來 😭
+（前幾次就是卡在這，這次真的拜託大家幫忙）
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+還沒安裝的朋友，三步驟：
+1️⃣ 加入群組：https://groups.google.com/g/mind-nature_test
+2️⃣ 成為測試員：https://play.google.com/apps/testing/io.github.mind_nature.falundafabooks
+3️⃣ 下載：https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks
+（步驟 1、2 要用同一個 Google 帳號）
+
+真的很感謝大家，這次一起讓它上架 🙏
+```
+
+### 【每日提醒】每天早上發一則（維持每日活躍 ≥ 12）
+最簡版：
+```
+📱 早安～今天也記得打開 App 滑一下喔（1 分鐘就好）謝謝大家 🙏
+```
+帶天數版：
+```
+🙏 早安～測試第 X 天
+今天也麻煩打開 App 1 分鐘，謝謝大家幫忙 🙏
+```
+
+### 【活躍不足加強版】當天活躍 < 12 人時發
+```
+⚠️ 今天還差幾位打開 App，拜託還沒開的朋友幫忙開一下～
+只要 1 分鐘，不然測試會前功盡棄 🙏🙏
+```
+
+### 【版本更新提醒】推新版時發（第 6、12 天）
+```
+📲 App 出新版本囉，麻煩到 Google Play 更新一下
+（Play 商店 →「法輪大法閱讀版」→ 點「更新」）
+
+⭐ 有空的話，歡迎從 Play 商店測試頁面送「意見回饋」
+（Google 看得到這個管道，對審核通過有幫助 🙏）
+
+⚠️ 也提醒大家「每天」打開 App，中途不要移除 🙏
+```
