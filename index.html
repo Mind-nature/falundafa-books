@@ -409,6 +409,19 @@
   .loading-spinner img { width: 100%; height: 100%; }
   @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.15); opacity: 1; } }
 
+  /* === 回到頂部按鈕 === */
+  .back-top-btn {
+    position: fixed; right: 16px; bottom: 24px; z-index: 90;
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(10,46,74,0.75); color: #fff; border: none;
+    font-size: 20px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  }
+  .back-top-btn.show { display: flex; }
+  .back-top-btn:active { background: rgba(10,46,74,0.95); }
+  body.dark .back-top-btn { background: rgba(70,70,70,0.8); }
+
   /* === 翻頁按鈕 === */
   .page-nav {
     display: flex; justify-content: space-between;
@@ -522,6 +535,9 @@
     </div>
   </div>
 </div>
+
+<!-- 回到頂部按鈕（閱讀頁專用） -->
+<button class="back-top-btn" id="backTopBtn" onclick="scrollToTop()" title="回到頂部">↑</button>
 
 <!-- 新功能公告（內容由 announcements.json 動態載入） -->
 <div class="notice-overlay" id="featureOverlay" onclick="if(event.target===this)closeFeatureNotice()">
@@ -1324,6 +1340,7 @@ var handlingPopstate = false;
 
 function showPage(view) {
   currentView = view;
+  updateBackTopBtn();
   // 先切換 class（決定誰顯示），再清除 inline style（避免閃一下）
   document.getElementById('pageBooks').classList.toggle('active', view === 'books');
   document.getElementById('pageChapters').classList.toggle('active', view === 'chapters');
@@ -1422,6 +1439,17 @@ window.addEventListener('scroll', function() {
     _scrollSaveTimer = null;
   }, 200);
 }, { passive: true });
+
+// 回到頂部按鈕（閱讀頁往下滑才出現）
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function updateBackTopBtn() {
+  var y = window.scrollY || window.pageYOffset || 0;
+  var show = (currentView === 'reader') && y > 600;
+  document.getElementById('backTopBtn').classList.toggle('show', show);
+}
+window.addEventListener('scroll', updateBackTopBtn, { passive: true });
 
 window.addEventListener('popstate', function(e) {
   if (currentView === 'books') {
