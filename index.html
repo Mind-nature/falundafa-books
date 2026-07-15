@@ -80,6 +80,11 @@
   body.dark .bookmark-box { background: #1e1e1e; color: #eee; }
   .bookmark-box h3 { text-align: center; margin: 0; padding: 20px 48px 12px; font-size: 17px; color: #0a2e4a; border-bottom: 1px solid #eee; }
   body.dark .bookmark-box h3 { color: #90c0e0; border-color: #333; }
+  .bookmark-box h3 .bm-count {
+    font-size: 13px; font-weight: normal; color: #999; margin-left: 6px;
+  }
+  body.dark .bookmark-box h3 .bm-count { color: #777; }
+  .bookmark-box h3 .bm-count.is-full { color: #e8a317; }
   .bookmark-toggle-row {
     padding: 12px 20px; border-bottom: 1px solid #eee;
     display: flex; align-items: center; gap: 10px;
@@ -524,7 +529,7 @@
 <div class="bookmark-overlay" id="bookmarkOverlay" onclick="if(event.target===this)closeBookmarkPanel()">
   <div class="bookmark-box">
     <button class="notice-x" onclick="closeBookmarkPanel()">✕</button>
-    <h3>書籤</h3>
+    <h3>書籤<span class="bm-count" id="bmCount"></span></h3>
     <div class="bookmark-toggle-row" id="bmToggleRow" style="display:none">
       <span class="bm-page-label" id="bmPageLabel"></span>
       <button class="bookmark-toggle-btn" id="bmToggleBtn" onclick="toggleBookmarkCurrent()"></button>
@@ -1710,6 +1715,13 @@ function renderBookmarkPanel() {
     }
   } else {
     toggleRow.style.display = 'none';
+  }
+
+  // 標題計數（達上限時變金色提醒）
+  var cnt = document.getElementById('bmCount');
+  if (cnt) {
+    cnt.textContent = bookmarksList.length > 0 ? '（' + bookmarksList.length + ' / 10）' : '';
+    cnt.classList.toggle('is-full', bookmarksList.length >= 10);
   }
 
   // Bookmark list
