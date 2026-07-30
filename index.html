@@ -1938,12 +1938,54 @@ function renderAnnouncement(ann) {
       html += '</div>';
     });
   }
+  if (ann.copyUrl) {
+    html += '<div style="text-align:center; margin-top:18px;">' +
+      '<button onclick="copyAnnouncementLink()" style="display:inline-flex; align-items:center; gap:8px; padding:10px 22px; background:#f0f4f8; color:#0a2e4a; border:1.5px solid #c5d3e0; border-radius:10px; font-size:14px; font-weight:bold; cursor:pointer;">' +
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0a2e4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' +
+      (ann.copyText || '複製連結分享給朋友') + '</button></div>';
+  }
+  if (ann.playStoreUrl) {
+    html += '<div style="text-align:center; margin-top:12px;">' +
+      '<a href="' + ann.playStoreUrl + '" target="_blank" style="display:inline-flex; align-items:center; gap:10px; padding:8px 22px; background:#000; border-radius:10px; text-decoration:none;">' +
+      '<svg width="26" height="26" viewBox="0 0 24 24">' +
+      '<path d="M3.6 1.8 13.5 12 3.6 22.2c-.4-.25-.6-.7-.6-1.2V3c0-.5.2-.95.6-1.2z" fill="#00c9ff"/>' +
+      '<path d="M17 8.5 4.9 1.5c-.33-.19-.72-.2-1.05-.05L13.5 12 17 8.5z" fill="#00e676"/>' +
+      '<path d="M3.85 22.55c.33.15.72.14 1.05-.05L17 15.5 13.5 12l-9.65 10.55z" fill="#ff3d47"/>' +
+      '<path d="M21.2 10.8 17 8.5 13.5 12l3.5 3.5 4.2-2.3c.8-.44.8-1.96 0-2.4z" fill="#ffc107"/>' +
+      '</svg>' +
+      '<span style="text-align:left; line-height:1.25;">' +
+      '<span style="display:block; font-size:11px; color:#ccc;">立即下載於</span>' +
+      '<span style="display:block; font-size:17px; color:#fff; font-weight:bold;">Google Play</span>' +
+      '</span></a></div>';
+  }
   if (ann.linkUrl && ann.linkText) {
     html += '<div style="text-align:center; margin-top:18px;">' +
       '<a href="' + ann.linkUrl + '" target="_blank" style="display:inline-block; padding:8px 24px; background:#0a2e4a; color:white; border-radius:8px; font-size:14px; text-decoration:none;">' +
       ann.linkText + '</a></div>';
   }
   document.getElementById('featureContent').innerHTML = html;
+}
+
+function copyAnnouncementLink() {
+  var url = currentAnnouncement && currentAnnouncement.copyUrl;
+  if (!url) return;
+  function done() { showToast('連結已複製！<br>貼到 LINE 或訊息即可分享'); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(done, function() { fallbackCopyText(url, done); });
+  } else {
+    fallbackCopyText(url, done);
+  }
+}
+
+function fallbackCopyText(text, done) {
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); }
+  catch (e) { showToast('複製失敗，請手動複製連結'); }
+  document.body.removeChild(ta);
 }
 
 function openFeatureNotice() {

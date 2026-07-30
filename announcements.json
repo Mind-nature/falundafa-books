@@ -1,5 +1,5 @@
 {
-  "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。",
+  "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。按鈕欄位（皆可省略）：copyUrl+copyText=複製連結按鈕、playStoreUrl=Google Play 徽章、linkUrl+linkText=一般連結按鈕。",
   "active": "official_release_v1",
   "announcements": [
     {
@@ -12,8 +12,9 @@
         { "label": "分享給親友", "text": "直接傳商店連結最快：<b>Play 商店搜尋「法輪大法閱讀版」</b>，或由群組取得安裝連結。" },
         { "label": "小小請求", "text": "若您覺得好用，歡迎到 Play 商店頁面<b>留下評分與評論</b>，讓更多有緣人找得到這個 App。" }
       ],
-      "linkUrl": "https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks",
-      "linkText": "前往 Play 商店留評論"
+      "copyUrl": "https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks",
+      "copyText": "複製連結分享給朋友",
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks"
     },
     {
       "id": "bookmark_v1",
