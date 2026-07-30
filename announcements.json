@@ -3,6 +3,19 @@
   "active": "",
   "announcements": [
     {
+      "id": "official_release_v1",
+      "title": "正式版上架囉！",
+      "subtitle": "感謝每一位測試夥伴的支持與陪伴 🙏",
+      "items": [
+        { "label": "正式上架", "text": "「法輪大法閱讀版」已在 Google Play <b>正式上架</b>，任何人都能直接搜尋安裝，不再需要加入測試。" },
+        { "label": "已安裝的朋友", "text": "什麼都不用做，App 會照常自動更新，資料與書籤都不受影響。" },
+        { "label": "分享給親友", "text": "直接傳商店連結最快：<b>Play 商店搜尋「法輪大法閱讀版」</b>，或由群組取得安裝連結。" },
+        { "label": "小小請求", "text": "若您覺得好用，歡迎到 Play 商店頁面<b>留下評分與評論</b>，讓更多有緣人找得到這個 App。" }
+      ],
+      "linkUrl": "https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks",
+      "linkText": "前往 Play 商店留評論"
+    },
+    {
       "id": "bookmark_v1",
       "title": "新增功能：書籤",
       "subtitle": "標記閱讀位置，下次直接跳回繼續閱讀",
