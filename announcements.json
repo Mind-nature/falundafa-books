@@ -1,6 +1,6 @@
 {
   "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。",
-  "active": "",
+  "active": "official_release_v1",
   "announcements": [
     {
       "id": "official_release_v1",
