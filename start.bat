@@ -9,8 +9,17 @@ if %errorlevel%==0 (
     goto :found
 )
 
-if exist "C:\Users\adminininin\AppData\Local\Programs\Python\Python311\python.exe" (
-    set "PYTHON=C:\Users\adminininin\AppData\Local\Programs\Python\Python311\python.exe"
+:: Fallback: common per-user Python install locations
+for %%V in (313 312 311 310) do (
+    if exist "%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe" (
+        set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe"
+        goto :found
+    )
+)
+
+py --version >nul 2>&1
+if %errorlevel%==0 (
+    set PYTHON=py
     goto :found
 )
 

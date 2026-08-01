@@ -4,7 +4,7 @@
     {
       "name": "falundafa-reader",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["D:/WORKCL/falundafa_books/serve.py"],
+      "runtimeArgs": ["serve.py"],
       "autoPort": true
     }
   ]
