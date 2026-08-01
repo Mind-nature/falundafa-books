@@ -70,21 +70,23 @@
 | 1.0.2 | 3 | 7/5 | 搜尋群組標題配色、關鍵字高亮 |
 | 1.0.3 | 4 | 7/9 | 回到頂部浮動按鈕、搜尋樣式微調 |
 | 1.0.4 | 5 | 7/15 | 書籤面板標題顯示數量計數（X / 10） |
+| 1.0.5 | 6 | 8/1 | targetSdk 升級 36（Bubblewrap CLI 本機打包），待上傳 |
 
 ---
 
 ## 待辦事項（上架後）
 
-- [ ] **targetSdk 升級 36**（⚠️ Google 期限是 **8/31**，不是 11/1！11/1 是申請延展後的期限）
-  - 逾期後果：不能發更新（App 不會下架、使用者不受影響）
-  - 8/1 試打包：PWABuilder 仍產 targetSdk 35，該包已捨棄，版本號 1.0.5 / code 6 保留
-  - 8/1 查證（GitHub）：底層 Bubblewrap v1.25.0 已於 7/31 升到 targetSdk 36，
-    PWABuilder 維護者同日開 PR #6209 部署中 → **幾天內網站就會跟上**
-  - **行動：8/5–8/8 回 PWABuilder 重新打包（1.0.5 / code 6）**，
-    打包後先請 Claude 解 AAB 驗證 targetSdk=36 才上傳正式版
-  - 備案 A：8 月中仍是 35 → 本機 `npm i -g @bubblewrap/cli`（1.25.0）打包，可產 36
-  - 備案 B：來不及 → Play Console 提交延展表單，期限延至 11/1
-  - 可考慮同一版順便做「完整離線閱讀」（把全部書籍 HTML 加進 sw.js 的 PRECACHE）
+- [x] **targetSdk 升級 36** ✅ 8/1 已用本機 Bubblewrap CLI 1.25.0 打包完成
+  - v1.0.5 / code 6，已驗證：targetSdk 36、versionName 1.0.5、簽章與上傳金鑰一致
+  - 檔案在 `2_app/法輪大法閱讀版.aab`，**待上傳 Play Console 正式版軌道**
+  - 本機打包環境已建好（之後可重複用，不再依賴 PWABuilder 網站）：
+    - 專案：`falundafa_books_release/4_bubblewrap/`（twa-manifest.json 為設定檔）
+    - 工具：`C:\Users\adminininin\.bubblewrap\`（JDK 17 + Android SDK）
+    - 下次更新流程：改 twa-manifest.json 的 appVersion/appVersionCode →
+      `bubblewrap update --skipVersionUpgrade` → 手動 gradlew bundleRelease → jarsigner 簽署
+      （細節見 README.txt 的 Bubblewrap 流程）
+- [ ] 上傳 v1.0.5 至正式版並送審（順便觀察 Play Console 四項建議是否消失）
+- [ ] 可考慮之後做「完整離線閱讀」（把全部書籍 HTML 加進 sw.js 的 PRECACHE）
 - [ ] 發感謝訊息給測試群組，告知正式版已上架，分享正式版連結
 - [ ] 請夥伴到商店頁留「公開評論」（正式版才有；測試期的私人意見不算）→ 有助搜尋排名
 - [ ] 測試員去留：可自由退出（退出後變一般用戶、照常收更新）；建議留幾位在測試軌道，日後新版先試再推正式
