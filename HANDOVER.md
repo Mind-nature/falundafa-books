@@ -75,8 +75,11 @@
 
 ## 待辦事項（上架後）
 
-- [ ] **8 月：targetSdk 升級 36**（Google 政策期限 11/1，逾期不能發更新）
-  - 用最新版 PWABuilder 重新打包（新版工具自動帶 targetSdk 36），code 填 6，上傳送審
+- [ ] **targetSdk 升級 36**（Google 政策期限 11/1，逾期不能發更新）
+  - ⚠️ 8/1 已試打包：PWABuilder 目前產出仍是 targetSdk 35（compileSdk 36），
+    尚未達標，該包已捨棄未上傳，版本號 1.0.5 / code 6 保留給下次
+  - **9 月再回 PWABuilder 重試**，打包後先驗證 targetSdk（問 Claude 解 AAB 確認）
+    確認是 36 才上傳；若 10 月中工具仍未更新，考慮 Bubblewrap CLI 手動改 build.gradle
   - 可考慮同一版順便做「完整離線閱讀」（把全部書籍 HTML 加進 sw.js 的 PRECACHE）
 - [ ] 發感謝訊息給測試群組，告知正式版已上架，分享正式版連結
 - [ ] 請夥伴到商店頁留「公開評論」（正式版才有；測試期的私人意見不算）→ 有助搜尋排名
