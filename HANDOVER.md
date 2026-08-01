@@ -75,11 +75,15 @@
 
 ## 待辦事項（上架後）
 
-- [ ] **targetSdk 升級 36**（Google 政策期限 11/1，逾期不能發更新）
-  - ⚠️ 8/1 已試打包：PWABuilder 目前產出仍是 targetSdk 35（compileSdk 36），
-    尚未達標，該包已捨棄未上傳，版本號 1.0.5 / code 6 保留給下次
-  - **9 月再回 PWABuilder 重試**，打包後先驗證 targetSdk（問 Claude 解 AAB 確認）
-    確認是 36 才上傳；若 10 月中工具仍未更新，考慮 Bubblewrap CLI 手動改 build.gradle
+- [ ] **targetSdk 升級 36**（⚠️ Google 期限是 **8/31**，不是 11/1！11/1 是申請延展後的期限）
+  - 逾期後果：不能發更新（App 不會下架、使用者不受影響）
+  - 8/1 試打包：PWABuilder 仍產 targetSdk 35，該包已捨棄，版本號 1.0.5 / code 6 保留
+  - 8/1 查證（GitHub）：底層 Bubblewrap v1.25.0 已於 7/31 升到 targetSdk 36，
+    PWABuilder 維護者同日開 PR #6209 部署中 → **幾天內網站就會跟上**
+  - **行動：8/5–8/8 回 PWABuilder 重新打包（1.0.5 / code 6）**，
+    打包後先請 Claude 解 AAB 驗證 targetSdk=36 才上傳正式版
+  - 備案 A：8 月中仍是 35 → 本機 `npm i -g @bubblewrap/cli`（1.25.0）打包，可產 36
+  - 備案 B：來不及 → Play Console 提交延展表單，期限延至 11/1
   - 可考慮同一版順便做「完整離線閱讀」（把全部書籍 HTML 加進 sw.js 的 PRECACHE）
 - [ ] 發感謝訊息給測試群組，告知正式版已上架，分享正式版連結
 - [ ] 請夥伴到商店頁留「公開評論」（正式版才有；測試期的私人意見不算）→ 有助搜尋排名
