@@ -19,14 +19,9 @@
 | 帳號類型 | 個人開發者帳號（適用 12 人×14 天封閉測試規定） |
 | ★ 正式版商店連結 | https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks |
 
-### 本機檔案位置（不在 git，僅本地/雲端硬碟）
-- 上架素材：`D:\WORKCL\falundafa_books_release\`
-  - `1_keys/` — 簽署金鑰 signing.keystore（密碼記於該資料夾，另有加密備份在 Google Drive）
-  - `2_app/` — 目前版本 .aab/.apk + 歷史版本/
-  - `3_store_listing/` — 圖示、特色圖、7 張截圖、文案
-  - `9_archive/` — 最新完整包 zip + assetlinks 備份
-  - `README.txt` — 打包/上傳 SOP（含金鑰密碼）
-  - `封閉測試操作手冊.txt` — 招募、群組訊息範本、每日盯場清單
+### 上架素材與打包環境
+簽署金鑰、AAB/APK、商店素材、打包專案與各項操作說明皆存於本機
+（不進 git，本 repo 為公開 repo）。本機資料夾內另有 README 說明結構與流程。
 
 ---
 
@@ -88,13 +83,9 @@
 
 - [x] **targetSdk 升級 36** ✅ 8/1 已用本機 Bubblewrap CLI 1.25.0 打包完成
   - v1.0.5 / code 6，已驗證：targetSdk 36、versionName 1.0.5、簽章與上傳金鑰一致
-  - 檔案在 `2_app/法輪大法閱讀版.aab`，**待上傳 Play Console 正式版軌道**
-  - 本機打包環境已建好（之後可重複用，不再依賴 PWABuilder 網站）：
-    - 專案：`falundafa_books_release/4_bubblewrap/`（twa-manifest.json 為設定檔）
-    - 工具：`C:\Users\adminininin\.bubblewrap\`（JDK 17 + Android SDK）
-    - 下次更新流程：改 twa-manifest.json 的 appVersion/appVersionCode →
-      `bubblewrap update --skipVersionUpgrade` → 手動 gradlew bundleRelease → jarsigner 簽署
-      （細節見 README.txt 的 Bubblewrap 流程）
+  - PWABuilder 網站當時仍產 targetSdk 35，故改用本機 Bubblewrap CLI
+  - 本機打包環境已建好，之後更新不再依賴 PWABuilder 網站
+    （詳細步驟見本機打包專案內的說明文件）
 - [ ] 上傳 v1.0.5 至正式版並送審（順便觀察 Play Console 四項建議是否消失）
 - [ ] 可考慮之後做「完整離線閱讀」（把全部書籍 HTML 加進 sw.js 的 PRECACHE）
 - [ ] 發感謝訊息給測試群組，告知正式版已上架，分享正式版連結
@@ -108,15 +99,16 @@
 ## 常用操作
 
 ### PULL（同步網站 repo 最新）
-本地版：`git pull`（在 D:\WORKCL\falundafa_books）
+在本機專案資料夾執行 `git pull`
 
 ### 更新 App 流程（推新版）
-1. PWABuilder（https://www.pwabuilder.com）輸入網站網址 → Android → Google Play
-2. Package ID：io.github.mind_nature.falundafabooks（務必一致）
-3. Version code 每次 +1（目前最新 5，下次填 6）
-4. Signing key 選 Use mine，上傳 1_keys/signing.keystore
-5. 下載 → 解壓找 .aab → Play Console 封閉測試建立新版本上傳送審
-6. 詳細步驟見本機 README.txt
+現行做法：本機 Bubblewrap CLI 打包（PWABuilder 網站已停用，因其 targetSdk 落後）
+1. 修改打包設定檔的 appVersion 與 appVersionCode（code 每次 +1，目前最新 6）
+2. `bubblewrap update --skipVersionUpgrade` 重新產生 Android 專案
+3. `gradlew bundleRelease assembleRelease` 建置
+4. 用簽署金鑰簽 AAB／APK
+5. Play Console → 正式版 → 建立新版本 → 上傳 → 送審
+※ 完整指令與金鑰資訊見本機打包專案內的說明文件
 
 ### 重要觀念
 - 網站內容（HTML/CSS/JS）改了 push GitHub 就即時生效，App 自動抓最新，不用重打包。
