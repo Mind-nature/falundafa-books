@@ -8,7 +8,12 @@ os.chdir(os.path.join(os.path.dirname(__file__), '..'))
 idx = json.load(open('search-index.json'))
 books = json.load(open('books_index.json'))
 
-COUNT_RE = re.compile(r'[0-9A-Za-z０-９Ａ-Ｚａ-ｚ〇㐀-䶿一-鿿豈-﫿\U00020000-\U0002FFFF]')
+# 漢字區以轉義碼位書寫（字面字元會被編輯器 NFC 正規化而偏移範圍，如 U+F900 會變 U+8C48）
+COUNT_RE = re.compile(
+    r'[0-9A-Za-z\uFF10-\uFF19\uFF21-\uFF3A\uFF41-\uFF5A\u3007'
+    r'\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF'
+    r'\U00020000-\U0002FFFF]'
+)
 
 # 洪吟/洪吟二：books_index 指到的是整本文字版（含目錄），正文以索引分頁 key 為準
 SPECIAL_PREFIX = {15: '15_hongyin/', 26: '26_hongyin2/'}
