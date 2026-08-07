@@ -317,6 +317,7 @@
   .book-item .book-date {
     font-size: 11px; color: #999; margin-top: 2px;
   }
+  .book-item .book-wc { margin-left: 10px; }
   .book-item .arrow { color: #ccc; font-size: 18px; }
 
   /* === 第二層：章節列表 === */
@@ -675,6 +676,20 @@ var bookDates = {
   49:'2022年03月15日',50:'2022年03月15日',51:'2022年03月18日',52:'2025年10月11日'
 };
 
+// 各書正文字數（漢字＋數字＋英文字母，不含標點、空格、換行；含各講標題）
+// 以 search-index.json 的正文為準統計；洪吟五/六（46,51）不在索引且為圖片版，無法計，不列
+var bookWordCounts = {
+  1:149116,2:52426,3:55716,4:83521,5:25101,6:39112,
+  7:15861,8:43101,9:34467,10:37770,11:46324,12:34625,
+  13:30865,14:45898,15:2148,16:46231,17:36977,18:38705,
+  19:33683,20:33300,21:24609,22:22069,23:24348,24:26037,
+  25:50508,26:2659,27:41307,28:41029,29:36072,30:38788,
+  31:29871,32:39630,33:35721,34:32287,35:45411,36:42770,
+  37:32571,38:35852,39:7840,40:26877,41:35328,42:44238,
+  43:35907,44:56723,45:10612,47:43504,48:52959,49:41335,
+  50:45756,52:22286
+};
+
 var xjwDates = {
   1:'2012年11月06日',2:'2012年11月18日',3:'2016年07月31日',4:'2016年08月19日',
   5:'2016年10月13日',6:'2016年11月06日',7:'2016年11月27日',8:'2016年11月29日',
@@ -698,11 +713,14 @@ function renderBooks() {
   el.innerHTML = books.map((b, i) => {
     const progress = localStorage.getItem('book_' + b.id + '_completed');
     const date = bookDates[b.id] || '';
+    const wc = bookWordCounts[b.id];
     return '<div class="book-item" onclick="openBook(' + i + ')">' +
       '<span class="book-num">' + b.id + '.</span>' +
       '<div class="progress-dot ' + (progress ? 'has-progress' : '') + '"></div>' +
       '<div class="book-name">' + b.name +
-        (date ? '<div class="book-date">更新: ' + date + '</div>' : '') +
+        (date ? '<div class="book-date">更新: ' + date +
+          (wc ? '<span class="book-wc">' + wc.toLocaleString() + ' 字</span>' : '') +
+        '</div>' : '') +
       '</div>' +
       '<span class="arrow">›</span>' +
     '</div>';
