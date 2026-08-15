@@ -809,6 +809,7 @@ function openBook(idx, skipUrlUpdate, targetChapter) {
     document.getElementById('chapterList').innerHTML =
       '<div class="loading">此書無章節資料</div>';
     showPage('chapters');
+    window.scrollTo(0, 0);
     return;
   }
 
@@ -831,6 +832,7 @@ function openBook(idx, skipUrlUpdate, targetChapter) {
   if (book.id === 52) {
     renderXjwChapters(book);
     showPage('chapters');
+    window.scrollTo(0, 0);
     return;
   }
 
@@ -988,6 +990,8 @@ function openBook(idx, skipUrlUpdate, targetChapter) {
   el.innerHTML = html;
   el.style.fontSize = fontSize + 'px';
   showPage('chapters');
+  // 從書單進入目錄一律從頂部開始（返回時的位置恢復由 goBack 的 savedScrollChapters 處理）
+  window.scrollTo(0, 0);
 }
 
 function toggleSections(idx) {
