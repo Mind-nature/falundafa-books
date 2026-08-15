@@ -2082,7 +2082,7 @@ function onSearchInput() {
     document.getElementById('searchResults').style.display = 'none';
     document.getElementById('bookList').style.display = '';
     document.getElementById('clearProgressBtn').style.display = '';
-    document.querySelector('#pageBooks > div:last-child').style.display = ''; // footer
+    document.querySelector('#pageBooks > div:last-child').style.display = 'flex'; // footer（原為 flex 版面）
     return;
   }
   searchTimer = setTimeout(function() { doSearch(q); }, 500);
@@ -2182,7 +2182,7 @@ function clearSearch() {
   document.getElementById('searchResults').style.display = 'none';
   document.getElementById('bookList').style.display = '';
   document.getElementById('clearProgressBtn').style.display = '';
-  document.querySelector('#pageBooks > div:last-child').style.display = '';
+  document.querySelector('#pageBooks > div:last-child').style.display = 'flex';
   searchAllResults = [];
   searchCurrentPage = 0;
   clearSearchHighlights();
