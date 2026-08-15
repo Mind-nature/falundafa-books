@@ -584,7 +584,7 @@
 <div class="page active" id="pageBooks">
   <div class="search-box">
     <div class="search-wrapper">
-      <input type="text" id="searchInput" placeholder="經文檢索（至少輸入2個字）" oninput="onSearchInput()">
+      <input type="text" id="searchInput" placeholder="經文檢索（多個詞可用空格分隔）" oninput="onSearchInput()">
       <button class="scope-filter-btn" id="scopeFilterBtn" onclick="toggleScopeDropdown()" title="篩選書籍">☰</button>
       <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
     </div>
@@ -2065,7 +2065,7 @@ function onSearchInput() {
   document.getElementById('searchClear').style.display = hasClear ? 'block' : 'none';
   document.getElementById('scopeFilterBtn').style.right = hasClear ? '36px' : '8px';
   clearTimeout(searchTimer);
-  if (q.length < 2) {
+  if (q.length < 1) {
     document.getElementById('searchResults').style.display = 'none';
     document.getElementById('bookList').style.display = '';
     document.getElementById('clearProgressBtn').style.display = '';
@@ -2281,39 +2281,111 @@ async function doSearch(query) {
   }
 }
 
+// 空格（含全形空格）切詞：多詞 = 全部都要出現（AND）
+function parseSearchTerms(query) {
+  var terms = query.split(/[\s　]+/).filter(function(t) { return t.length > 0; });
+  return terms.filter(function(t, i) { return terms.indexOf(t) === i; }); // 去重
+}
+
+function escapeRegExp(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// 把文字中所有詞加上 <mark>（依詞長排序避免短詞拆掉長詞）
+function markTermsHtml(text, terms) {
+  var sorted = terms.slice().sort(function(a, b) { return b.length - a.length; });
+  var re = new RegExp(sorted.map(escapeRegExp).join('|'), 'g');
+  return text.replace(re, function(m) { return '<mark>' + m + '</mark>'; });
+}
+
+var SEARCH_MAX_PER_FILE = 50;   // 單章結果上限（避免單字搜尋撐爆畫面）
+var SEARCH_TERM_WINDOW = 150;   // 多詞需彼此相距 150 字以內（近似同一段落）
+
 function findAllMatches(text, query, fileInfo, results) {
+  var terms = parseSearchTerms(query);
+  if (terms.length === 0) return;
   // 洪吟系列：顯示詩詞全文（一首詩只出一筆結果）
   var hongyin = [15, 26, 39, 45, 46, 51];
   var bk = books[fileInfo.bookIdx];
   if (bk && hongyin.indexOf(bk.id) !== -1) {
-    if (text.indexOf(query) === -1) return;
-    // Highlight all occurrences in full text, replace \n with <br>
-    var escaped = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var qEscaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    var fullHtml = text.replace(new RegExp(qEscaped, 'g'), '<mark>' + query + '</mark>');
-    fullHtml = fullHtml.replace(/\n/g, '<br>');
+    var allIn = terms.every(function(t) { return text.indexOf(t) !== -1; });
+    if (!allIn) return;
+    var fullHtml = markTermsHtml(text, terms).replace(/\n/g, '<br>');
     results.push({
       bookIdx: fileInfo.bookIdx, bookName: fileInfo.bookName,
-      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: fullHtml
+      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: fullHtml,
+      occIdx: 0, anchor: terms[0]
     });
     return;
   }
+  // 單詞搜尋：維持原有行為（每次出現各出一筆結果），僅單一「字」加上限防爆量
+  if (terms.length === 1) {
+    var q1 = terms[0];
+    var cap1 = q1.length === 1 ? SEARCH_MAX_PER_FILE : Infinity;
+    var n1 = 0, sp = 0;
+    while (n1 < cap1) {
+      var i1 = text.indexOf(q1, sp);
+      if (i1 === -1) break;
+      var s1 = Math.max(0, i1 - 30);
+      var e1 = Math.min(text.length, i1 + q1.length + 30);
+      var snip1 = (s1 > 0 ? '...' : '') +
+        text.substring(s1, i1) +
+        '<mark>' + text.substring(i1, i1 + q1.length) + '</mark>' +
+        text.substring(i1 + q1.length, e1) +
+        (e1 < text.length ? '...' : '');
+      results.push({
+        bookIdx: fileInfo.bookIdx, bookName: fileInfo.bookName,
+        chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: snip1,
+        occIdx: n1, anchor: q1
+      });
+      n1++;
+      sp = i1 + q1.length;
+    }
+    return;
+  }
+  // 每個詞在本章都要出現，否則直接跳過
+  var counts = terms.map(function(t) {
+    var c = 0, p = 0;
+    while ((p = text.indexOf(t, p)) !== -1) { c++; p += t.length; }
+    return c;
+  });
+  if (counts.some(function(c) { return c === 0; })) return;
+  // 錨點詞 = 出現次數最少的詞
+  var anchor = terms[counts.indexOf(Math.min.apply(null, counts))];
+  var added = 0, anchorOcc = -1, lastEnd = -1;
   var startPos = 0;
-  while (true) {
-    var idx = text.indexOf(query, startPos);
+  while (added < SEARCH_MAX_PER_FILE) {
+    var idx = text.indexOf(anchor, startPos);
     if (idx === -1) break;
-    var snippetStart = Math.max(0, idx - 30);
-    var snippetEnd = Math.min(text.length, idx + query.length + 30);
+    anchorOcc++;
+    startPos = idx + anchor.length;
+    if (idx < lastEnd) continue; // 已包含在前一筆結果的範圍內
+    // 檢查其他詞是否出現在錨點附近（±SEARCH_TERM_WINDOW）
+    var lo = Math.max(0, idx - SEARCH_TERM_WINDOW);
+    var hi = Math.min(text.length, idx + anchor.length + SEARCH_TERM_WINDOW);
+    var win = text.substring(lo, hi);
+    var spanLo = idx, spanHi = idx + anchor.length, ok = true;
+    for (var t = 0; t < terms.length; t++) {
+      if (terms[t] === anchor) continue;
+      var rel = win.indexOf(terms[t]);
+      if (rel === -1) { ok = false; break; }
+      var abs = lo + rel;
+      spanLo = Math.min(spanLo, abs);
+      spanHi = Math.max(spanHi, abs + terms[t].length);
+    }
+    if (!ok) continue;
+    var snippetStart = Math.max(0, spanLo - 30);
+    var snippetEnd = Math.min(text.length, spanHi + 30);
     var snippet = (snippetStart > 0 ? '...' : '') +
-      text.substring(snippetStart, idx) +
-      '<mark>' + text.substring(idx, idx + query.length) + '</mark>' +
-      text.substring(idx + query.length, snippetEnd) +
+      markTermsHtml(text.substring(snippetStart, snippetEnd), terms) +
       (snippetEnd < text.length ? '...' : '');
     results.push({
       bookIdx: fileInfo.bookIdx, bookName: fileInfo.bookName,
-      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: snippet
+      chName: fileInfo.name, chIdx: fileInfo.chIdx, snippet: snippet,
+      occIdx: anchorOcc, anchor: anchor
     });
-    startPos = idx + query.length;
+    added++;
+    lastEnd = snippetEnd;
   }
 }
 
@@ -2340,15 +2412,25 @@ function showSearchResultsPage() {
   var pageEnd = Math.min(pageStart + BOOKS_PER_PAGE, groups.length);
   var pageGroups = groups.slice(pageStart, pageEnd);
 
-  var html = '<div class="search-status">共找到 ' + total + ' 個結果（' + groups.length + ' 本書）</div>';
-
-  // Save collapsed state before re-render
+  // Save collapsed state before re-render（toggleAllSearchGroups 已設好狀態時跳過，避免被 DOM 現狀蓋掉）
   if (!window._collapsedBooks) window._collapsedBooks = {};
-  var oldGroups = document.querySelectorAll('.search-group');
-  oldGroups.forEach(function(el) {
-    var bookIdx = el.getAttribute('data-book');
-    if (bookIdx) window._collapsedBooks[bookIdx] = el.classList.contains('collapsed');
+  if (window._skipCollapseSave) {
+    window._skipCollapseSave = false;
+  } else {
+    var oldGroups = document.querySelectorAll('.search-group');
+    oldGroups.forEach(function(el) {
+      var bookIdx = el.getAttribute('data-book');
+      if (bookIdx) window._collapsedBooks[bookIdx] = el.classList.contains('collapsed');
+    });
+  }
+
+  var allCollapsed = groups.length > 0 && groups.every(function(grp) {
+    return window._collapsedBooks[grp.bookIdx];
   });
+  var html = '<div class="search-status" style="display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap;">' +
+    '<span>共找到 ' + total + ' 個結果（' + groups.length + ' 本書）</span>' +
+    '<button onclick="toggleAllSearchGroups()" style="padding:4px 12px; font-size:12px; color:#0a2e4a; background:#f0f4f8; border:1px solid #c5d3e0; border-radius:8px; cursor:pointer;">' +
+    (allCollapsed ? '全部展開' : '全部收合') + '</button></div>';
 
   for (var g = 0; g < pageGroups.length; g++) {
     var grp = pageGroups[g];
@@ -2374,7 +2456,9 @@ function showSearchResultsPage() {
       var occTotal = chOccCount[key];
       var searchQuery = document.getElementById('searchInput').value.trim();
       var chLabel = r.chName + ' ' + (occIdx + 1) + '/' + occTotal;
-      html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\',' + occIdx + ',' + occTotal + ')">' +
+      var jumpOcc = (typeof r.occIdx === 'number') ? r.occIdx : occIdx;
+      var anchorArg = encodeURIComponent(r.anchor || searchQuery);
+      html += '<div class="search-result" onclick="openSearchResult(' + r.bookIdx + ',' + r.chIdx + ',\'' + encodeURIComponent(searchQuery) + '\',' + jumpOcc + ',' + occTotal + ',\'' + anchorArg + '\')">' +
         '<span class="sr-chapter">' + chLabel + '</span>' +
         '<div class="sr-snippet">' + r.snippet + '</div>' +
       '</div>';
@@ -2401,6 +2485,23 @@ function showSearchResultsPage() {
 function toggleSearchGroup(idx) {
   var el = document.getElementById('sg-' + idx);
   if (el) el.classList.toggle('collapsed');
+}
+
+function toggleAllSearchGroups() {
+  if (!window._collapsedBooks) window._collapsedBooks = {};
+  // 先把目前 DOM 上的收合狀態存回去，再判斷要全收還是全展
+  var domGroups = document.querySelectorAll('.search-group');
+  domGroups.forEach(function(el) {
+    var bookIdx = el.getAttribute('data-book');
+    if (bookIdx) window._collapsedBooks[bookIdx] = el.classList.contains('collapsed');
+  });
+  var bookIdxs = {};
+  searchAllResults.forEach(function(r) { bookIdxs[r.bookIdx] = true; });
+  var keys = Object.keys(bookIdxs);
+  var allCollapsed = keys.length > 0 && keys.every(function(k) { return window._collapsedBooks[k]; });
+  keys.forEach(function(k) { window._collapsedBooks[k] = !allCollapsed; });
+  window._skipCollapseSave = true;
+  showSearchResultsPage();
 }
 
 function renderSearchResultsPage(results, page) {
@@ -2433,9 +2534,10 @@ function searchPrevPage() {
 var pendingSearchHighlight = null;
 var cameFromSearch = false;
 
-function openSearchResult(bookIdx, chIdx, encodedQuery, occIdx, occTotal) {
+function openSearchResult(bookIdx, chIdx, encodedQuery, occIdx, occTotal, encodedAnchor) {
   var query = encodedQuery ? decodeURIComponent(encodedQuery) : '';
   pendingSearchHighlight = query || null;
+  window._pendingAnchor = encodedAnchor ? decodeURIComponent(encodedAnchor) : query;
   window._pendingOccIdx = occIdx || 0;
   window._pendingOccTotal = occTotal || 1;
   cameFromSearch = true;
@@ -2456,6 +2558,37 @@ function openSearchResult(bookIdx, chIdx, encodedQuery, occIdx, occTotal) {
   }
 }
 
+// 在閱讀器 DOM 中為每個詞加上 <mark class="search-highlight">
+function markTermsInReader(reader, terms) {
+  if (!terms || terms.length === 0) return;
+  var sorted = terms.slice().sort(function(a, b) { return b.length - a.length; });
+  var re = new RegExp(sorted.map(escapeRegExp).join('|'), 'g');
+  var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
+  var node;
+  var nodesToReplace = [];
+  while (node = walker.nextNode()) {
+    re.lastIndex = 0;
+    if (re.test(node.textContent)) nodesToReplace.push(node);
+  }
+  nodesToReplace.forEach(function(node) {
+    var text = node.textContent;
+    var parent = node.parentNode;
+    var frag = document.createDocumentFragment();
+    var pos = 0, m;
+    re.lastIndex = 0;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > pos) frag.appendChild(document.createTextNode(text.substring(pos, m.index)));
+      var mark = document.createElement('mark');
+      mark.textContent = m[0];
+      mark.className = 'search-highlight';
+      frag.appendChild(mark);
+      pos = m.index + m[0].length;
+    }
+    if (pos < text.length) frag.appendChild(document.createTextNode(text.substring(pos)));
+    parent.replaceChild(frag, node);
+  });
+}
+
 function highlightAndScrollToSearch() {
   if (!pendingSearchHighlight) return;
   var query = pendingSearchHighlight;
@@ -2463,34 +2596,7 @@ function highlightAndScrollToSearch() {
   var reader = document.querySelector('.reader');
   if (!reader) return;
 
-  // Use TreeWalker to find text nodes containing the query
-  var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
-  var node;
-  var firstMark = null;
-  var nodesToReplace = [];
-  while (node = walker.nextNode()) {
-    if (node.textContent.indexOf(query) !== -1) {
-      nodesToReplace.push(node);
-    }
-  }
-  nodesToReplace.forEach(function(node) {
-    var text = node.textContent;
-    var parent = node.parentNode;
-    var frag = document.createDocumentFragment();
-    var pos = 0;
-    var idx;
-    while ((idx = text.indexOf(query, pos)) !== -1) {
-      if (idx > pos) frag.appendChild(document.createTextNode(text.substring(pos, idx)));
-      var mark = document.createElement('mark');
-      mark.textContent = query;
-      mark.className = 'search-highlight';
-      frag.appendChild(mark);
-      if (!firstMark) firstMark = mark;
-      pos = idx + query.length;
-    }
-    if (pos < text.length) frag.appendChild(document.createTextNode(text.substring(pos)));
-    parent.replaceChild(frag, node);
-  });
+  markTermsInReader(reader, parseSearchTerms(query));
 
   // Add floating search bar with navigation
   var oldBar = document.querySelector('.search-bar-float');
@@ -2499,10 +2605,18 @@ function highlightAndScrollToSearch() {
   if (allMarks.length > 0) {
     var occIdx = window._pendingOccIdx || 0;
     var occTotal = window._pendingOccTotal || allMarks.length;
+    // 跳轉目標：錨點詞的第 occIdx 個出現位置（單詞搜尋時錨點=查詢字串，行為同以往）
+    var anchorTerm = window._pendingAnchor || query;
+    var anchorMarks = [];
+    for (var mi = 0; mi < allMarks.length; mi++) {
+      if (allMarks[mi].textContent === anchorTerm) anchorMarks.push(mi);
+    }
+    var startIdx = anchorMarks.length > 0
+      ? anchorMarks[Math.min(occIdx, anchorMarks.length - 1)]
+      : Math.min(occIdx, allMarks.length - 1);
     window._pendingOccIdx = 0;
     window._pendingOccTotal = 1;
-    // Start at the correct occurrence
-    var startIdx = Math.min(occIdx, allMarks.length - 1);
+    window._pendingAnchor = null;
     window._searchHighlightIdx = startIdx;
     var bar = document.createElement('div');
     bar.className = 'search-bar-float';
@@ -2567,34 +2681,8 @@ function reSearchInArticle(query) {
     parent.replaceChild(document.createTextNode(mark.textContent), mark);
     parent.normalize();
   });
-  // Re-highlight with new query
-  var walker = document.createTreeWalker(reader, NodeFilter.SHOW_TEXT, null, false);
-  var node;
-  var nodesToReplace = [];
-  while (node = walker.nextNode()) {
-    if (node.textContent.indexOf(query) !== -1) {
-      nodesToReplace.push(node);
-    }
-  }
-  var firstMark = null;
-  nodesToReplace.forEach(function(node) {
-    var text = node.textContent;
-    var parent = node.parentNode;
-    var frag = document.createDocumentFragment();
-    var pos = 0;
-    var idx;
-    while ((idx = text.indexOf(query, pos)) !== -1) {
-      if (idx > pos) frag.appendChild(document.createTextNode(text.substring(pos, idx)));
-      var mark = document.createElement('mark');
-      mark.textContent = query;
-      mark.className = 'search-highlight';
-      frag.appendChild(mark);
-      if (!firstMark) firstMark = mark;
-      pos = idx + query.length;
-    }
-    if (pos < text.length) frag.appendChild(document.createTextNode(text.substring(pos)));
-    parent.replaceChild(frag, node);
-  });
+  // Re-highlight with new query（支援空格分隔多詞）
+  markTermsInReader(reader, parseSearchTerms(query));
   // Update capsule counter
   var allMarks = reader.querySelectorAll('mark.search-highlight');
   var counter = document.querySelector('.sh-counter');
