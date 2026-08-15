@@ -1,6 +1,6 @@
 {
   "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。按鈕欄位（皆可省略）：copyUrl+copyText=複製連結按鈕、playStoreUrl=Google Play 徽章、linkUrl+linkText=一般連結按鈕。",
-  "active": "official_release_v1",
+  "active": "",
   "announcements": [
     {
       "id": "official_release_v1",
