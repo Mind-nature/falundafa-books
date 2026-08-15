@@ -619,7 +619,15 @@
       瀏覽人次：<span id="visitorCount">載入中...</span>
     </div>
     <div id="installBtnWrap" style="display:none;">
-      <button class="clear-progress-btn" style="margin:0;" onclick="installPWA()">⬇ 加到主畫面</button>
+      <a class="clear-progress-btn" href="https://play.google.com/store/apps/details?id=io.github.mind_nature.falundafabooks" target="_blank" rel="noopener"
+         style="margin:0;display:inline-flex;align-items:center;gap:6px;text-decoration:none;">
+        <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3.6 1.8 13.5 12 3.6 22.2c-.4-.25-.6-.7-.6-1.2V3c0-.5.2-.95.6-1.2z" fill="#00c9ff"/>
+          <path d="M17 8.5 4.9 1.5c-.33-.19-.72-.2-1.05-.05L13.5 12 17 8.5z" fill="#00e676"/>
+          <path d="M3.85 22.55c.33.15.72.14 1.05-.05L17 15.5 13.5 12l-9.65 10.55z" fill="#ff3d47"/>
+          <path d="M21.2 10.8 17 8.5 13.5 12l3.5 3.5 4.2-2.3c.8-.44.8-1.96 0-2.4z" fill="#ffc107"/>
+        </svg>Google Play 下載
+      </a>
     </div>
   </div>
 </div>
@@ -3071,31 +3079,9 @@ if ('serviceWorker' in navigator) {
 }
 
 // === PWA 安裝按鈕 ===
-var _deferredInstallPrompt = null;
-
-// 手機網頁版才顯示安裝按鈕（App 內和電腦版不顯示）
-var _isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-if (_isMobile && !window.matchMedia('(display-mode: standalone)').matches) {
+// 網頁版顯示 Google Play 下載按鈕（電腦、手機皆顯示；已安裝的 App 內不顯示）
+if (!window.matchMedia('(display-mode: standalone)').matches) {
   document.getElementById('installBtnWrap').style.display = '';
-}
-
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  _deferredInstallPrompt = e;
-});
-
-function installPWA() {
-  if (!_deferredInstallPrompt) {
-    showToast('已安裝，可從桌面開啟 App<br>若已移除，請重新整理頁面');
-    return;
-  }
-  _deferredInstallPrompt.prompt();
-  _deferredInstallPrompt.userChoice.then(function(result) {
-    if (result.outcome === 'accepted') {
-      showToast('安裝成功！');
-    }
-    _deferredInstallPrompt = null;
-  });
 }
 </script>
 
