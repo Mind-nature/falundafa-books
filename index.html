@@ -143,26 +143,13 @@
   .notice-content {
     padding: 24px; overflow-y: auto; line-height: 1.9; font-size: 15px;
   }
-  /* 公告影片（點擊才載入 YouTube 播放器） */
+  /* 公告影片（YouTube 播放器，自帶封面與播放鍵） */
   .ann-video {
     position: relative; width: 100%; aspect-ratio: 16 / 9;
     background: #000; border-radius: 10px; overflow: hidden;
-    cursor: pointer; margin-bottom: 16px;
+    margin-bottom: 16px;
   }
-  .ann-video img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ann-video iframe { width: 100%; height: 100%; border: 0; display: block; }
-  .ann-video-play {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    width: 62px; height: 44px; border-radius: 11px;
-    background: rgba(0,0,0,0.62); transition: background 0.15s;
-  }
-  .ann-video:active .ann-video-play { background: #f00; }
-  .ann-video-play::after {
-    content: ''; position: absolute; top: 50%; left: 50%;
-    transform: translate(-38%, -50%);
-    border-style: solid; border-width: 10px 0 10px 17px;
-    border-color: transparent transparent transparent #fff;
-  }
   .notice-box h3 { text-align: center; margin-bottom: 16px; font-size: 18px; color: #0a2e4a; }
   .notice-box .notice-item { margin-bottom: 10px; }
   .notice-box .notice-item b { color: #0a2e4a; }
@@ -1989,13 +1976,13 @@ function renderAnnouncement(ann) {
   if (ann.subtitle) {
     html += '<p style="text-align:center;color:#666;font-size:13px;margin-bottom:14px;">' + ann.subtitle + '</p>';
   }
-  // YouTube 影片：先放縮圖，點擊才載入播放器（省流量、不預先植入追蹤 cookie）
+  // YouTube 影片：直接嵌入播放器（播放器自帶封面畫面與播放鍵）
+  // 用 youtube-nocookie 網域，未播放前不植入追蹤 cookie
   if (ann.youtubeId) {
-    var vid = ann.youtubeId;
-    html += '<div class="ann-video" id="annVideo" onclick="playAnnouncementVideo(\'' + vid + '\')">' +
-      '<img src="https://img.youtube.com/vi/' + vid + '/maxresdefault.jpg" alt="" ' +
-        'onerror="annThumbFallback(this, \'' + vid + '\')">' +
-      '<span class="ann-video-play"></span>' +
+    html += '<div class="ann-video">' +
+      '<iframe src="https://www.youtube-nocookie.com/embed/' + ann.youtubeId + '?rel=0" ' +
+        'allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+        'allowfullscreen loading="lazy"></iframe>' +
     '</div>';
   }
   if (ann.items && ann.items.length) {
@@ -2034,26 +2021,6 @@ function renderAnnouncement(ann) {
   document.getElementById('featureContent').innerHTML = html;
 }
 
-// 縮圖載入失敗：先退回 hqdefault（並非所有影片都有 maxresdefault）；
-// 再失敗代表連不到 YouTube（如中國大陸封鎖），整塊影片隱藏，只留文字與按鈕
-function annThumbFallback(img, id) {
-  if (img.dataset.fallback) {
-    var box = img.closest('.ann-video');
-    if (box) box.style.display = 'none';
-    return;
-  }
-  img.dataset.fallback = '1';
-  img.src = 'https://img.youtube.com/vi/' + id + '/hqdefault.jpg';
-}
-
-function playAnnouncementVideo(id) {
-  var box = document.getElementById('annVideo');
-  if (!box) return;
-  box.onclick = null;
-  box.style.cursor = 'default';
-  box.innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + id +
-    '?autoplay=1&rel=0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>';
-}
 
 function copyAnnouncementLink() {
   var url = currentAnnouncement && currentAnnouncement.copyUrl;
