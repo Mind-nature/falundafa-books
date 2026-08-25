@@ -558,9 +558,9 @@
 <!-- 新功能公告（內容由 announcements.json 動態載入） -->
 <div class="notice-overlay" id="featureOverlay" onclick="if(event.target===this)closeFeatureNotice()">
   <div class="notice-box">
-    <label class="feature-hide-today" title="7日內不再顯示">
+    <label class="feature-hide-today" title="不再顯示這則公告">
       <input type="checkbox" id="featureHideToday">
-      <span>7 日內不再顯示</span>
+      <span>不再顯示</span>
     </label>
     <button class="notice-x" onclick="closeFeatureNotice()">✕</button>
     <div class="notice-content" id="featureContent"></div>
@@ -1941,12 +1941,39 @@ function announcementHideKey(id) {
   return 'announce_' + id + '_hide';
 }
 
-function shouldShowAnnouncement(id) {
+function announcementCountKey(id) {
+  return 'announce_' + id + '_count';
+}
+
+// ann.cooldownDays：顯示一次後自動冷卻幾天（省略或 0 = 每次都顯示，維持舊行為）
+// ann.maxShows：總共最多顯示幾次（省略或 0 = 不限次數）
+function shouldShowAnnouncement(id, ann) {
   var hideUntil = localStorage.getItem(announcementHideKey(id));
-  if (!hideUntil) return true;
-  if (hideUntil === 'forever') return false;
-  var todayStr = new Date().toISOString().slice(0, 10);
-  return hideUntil < todayStr;
+  if (hideUntil === 'forever') return false;  // 使用者勾了「不再顯示」
+  if (hideUntil) {
+    var todayStr = new Date().toISOString().slice(0, 10);
+    if (hideUntil >= todayStr) return false;  // 冷卻期間
+  }
+  var maxShows = (ann && ann.maxShows) || 0;
+  if (maxShows > 0) {
+    var shown = parseInt(localStorage.getItem(announcementCountKey(id)) || '0', 10);
+    if (shown >= maxShows) return false;
+  }
+  return true;
+}
+
+// 公告顯示時呼叫：累計次數，並依 cooldownDays 自動設定下次可顯示的日期
+function markAnnouncementShown(ann) {
+  if (!ann || !ann.id) return;
+  var shown = parseInt(localStorage.getItem(announcementCountKey(ann.id)) || '0', 10);
+  localStorage.setItem(announcementCountKey(ann.id), String(shown + 1));
+  var days = ann.cooldownDays || 0;
+  if (days > 0) {
+    // 存 today+(days-1)；shouldShow 在該日期過後才放行，等於冷卻 days 天
+    var d = new Date();
+    d.setDate(d.getDate() + days - 1);
+    localStorage.setItem(announcementHideKey(ann.id), d.toISOString().slice(0, 10));
+  }
 }
 
 function loadAndShowAnnouncement() {
@@ -1960,10 +1987,11 @@ function loadAndShowAnnouncement() {
       var list = data.announcements || [];
       var ann = list.find(function(a) { return a && a.id === activeId; });
       if (!ann) return;
-      if (!shouldShowAnnouncement(ann.id)) return;
+      if (!shouldShowAnnouncement(ann.id, ann)) return;
       currentAnnouncement = ann;
       renderAnnouncement(ann);
       openFeatureNotice();
+      markAnnouncementShown(ann);
     })
     .catch(function() {});
 }
@@ -2052,10 +2080,8 @@ function openFeatureNotice() {
 function closeFeatureNotice() {
   var cb = document.getElementById('featureHideToday');
   if (cb && cb.checked && currentAnnouncement) {
-    // 7 日後再顯示
-    var d = new Date();
-    d.setDate(d.getDate() + 6);
-    localStorage.setItem(announcementHideKey(currentAnnouncement.id), d.toISOString().slice(0, 10));
+    // 使用者勾選「不再顯示」→ 這則公告永久不再出現
+    localStorage.setItem(announcementHideKey(currentAnnouncement.id), 'forever');
   }
   document.getElementById('featureOverlay').classList.remove('show');
   document.body.classList.remove('notice-open');

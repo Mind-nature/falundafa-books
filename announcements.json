@@ -1,12 +1,14 @@
 {
-  "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。可用欄位（皆可省略）：title、subtitle、youtubeId=YouTube 影片（點擊才載入）、items=條列說明、copyUrl+copyText=複製連結按鈕、playStoreUrl=Google Play 徽章、linkUrl+linkText=一般連結按鈕。",
+  "_說明": "active 填要顯示的公告 id；空字串或 null = 不顯示任何公告。announcements 陣列可放多筆草稿。內容欄位（皆可省略）：title、subtitle、youtubeId=YouTube 影片、items=條列說明、copyUrl+copyText=複製連結按鈕、playStoreUrl=Google Play 徽章、linkUrl+linkText=一般連結按鈕。頻率欄位：cooldownDays=顯示一次後自動冷卻幾天（省略=每次都顯示）、maxShows=總共最多顯示幾次（省略=不限）。使用者勾「不再顯示」則該則公告永久隱藏。",
   "active": "shenyun_2027",
   "announcements": [
     {
       "id": "shenyun_2027",
       "youtubeId": "wyxM2uJ-arw",
       "linkUrl": "https://zh-tw.shenyun.com/tw/list",
-      "linkText": "現在訂票"
+      "linkText": "現在訂票",
+      "cooldownDays": 14,
+      "maxShows": 3
     },
     {
       "id": "official_release_v1",
