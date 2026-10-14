@@ -11,17 +11,21 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.6.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
 <!-- === App 停止服務判斷 ===
-     已安裝的 Android App（TWA）與加到主畫面的捷徑，開啟時顯示停止服務頁面，
-     不載入書籍內容。用瀏覽器開啟的使用者不受影響。
+     只擋 Play 商店安裝的 App（TWA，referrer 為 android-app://）。
+     用瀏覽器開啟、以及早期「加到主畫面」留下的捷徑（standalone 模式）都不擋，
+     這些使用者仍可正常閱讀網頁版。
      測試方式：網址加上 ?apptest=1 即可預覽 App 使用者看到的畫面。 -->
 <script>
 (function () {
   var ref = document.referrer || '';
-  var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-                   || window.navigator.standalone === true;
-  var isApp = ref.indexOf('android-app://') === 0
-              || standalone
-              || location.search.indexOf('apptest=1') !== -1;
+  var isApp = ref.indexOf('android-app://') === 0;
+  // TWA 內重新整理時 referrer 會消失，用 sessionStorage 記住本次開啟狀態。
+  // 不可用 localStorage：TWA 與 Chrome 共用同一來源的 localStorage，會誤擋瀏覽器使用者。
+  try {
+    if (isApp) sessionStorage.setItem('app_twa', '1');
+    else if (sessionStorage.getItem('app_twa') === '1') isApp = true;
+  } catch (e) {}
+  if (location.search.indexOf('apptest=1') !== -1) isApp = true;
   if (!isApp) return;
   document.documentElement.setAttribute('data-app-blocked', '1');
   document.addEventListener('DOMContentLoaded', function () {

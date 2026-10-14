@@ -35,6 +35,23 @@
 - ⚠️ 同一頁面下方的紅色「刪除應用程式」**千萬不要按**（7 天後永久刪除，套件名稱 `io.github.mind_nature.falundafabooks` 將永遠不能再用）
 - 網站配合處理：`index.html` 首頁底部的 **Google Play 與 App Store 兩顆按鈕**都已用 HTML 註解隱藏，底部只剩「瀏覽人次」；顯示按鈕的 JS 也一併註解掉（搜尋 `installBtnWrap`，HTML 與 JS 各一處）。恢復上架時把三段註解拿掉即可
 
+### 「App 停止服務」的判斷範圍（2026-10-14 調整）
+原本同時擋 TWA 與 standalone 顯示模式，導致早期「加到主畫面」的使用者
+以為自己用瀏覽器開卻看到停止服務頁。**現在只擋 Play 商店安裝的 App**
+（referrer 為 `android-app://`），主畫面捷徑與瀏覽器一律放行。
+
+- 程式位置：`index.html` 最上方 `<!-- === App 停止服務判斷 === -->` 區塊
+- 預覽 App 使用者看到的畫面：網址加 `?apptest=1`
+- TWA 內重新整理時 referrer 會消失，故用 **sessionStorage** 記住本次開啟狀態
+- ⚠️ 這裡**不可改用 localStorage**：TWA 與 Chrome 共用同一來源的 localStorage，
+  一旦寫入就會連帶誤擋瀏覽器使用者
+
+#### 為什麼「用瀏覽器開」還會跳出 App 畫面
+`assetlinks.json` 向 Android 認證 App 擁有 `mind-nature.github.io` 網域，
+Android 因此把 App 設為該網域所有網址的預設處理者。只要 App 還裝在手機上，
+從 LINE／Facebook／QR code 點網址都會**被導去開 App** 而非瀏覽器。
+解法是請使用者移除 App，或直接在瀏覽器網址列手動輸入網址。
+
 ### 歷史（2026-07-30）：🎉 正式版已上架！
 - 7/30 收到 email：正式版權限申請通過（7/23 送出，審查 7 天）
 - 7/30 建立正式版版本（v1.0.4 / code 5，從檔案庫帶入，不用重新上傳 AAB）
